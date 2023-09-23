@@ -7,7 +7,7 @@ fn main() {
         Ok(()) => {}
         Err(e) => {
             warn!("Error: {}", e);
-            println!("Error: {}", e)
+            eprintln!("{e}");
         }
     }
 
