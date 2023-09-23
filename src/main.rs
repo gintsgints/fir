@@ -1,9 +1,16 @@
+use cli_log::{init_cli_log, warn, log_mem, Level, info};
 
 fn main() {
+    init_cli_log!();
+
     match fir::cli::run() {
-        Ok(()) => {},
+        Ok(()) => {}
         Err(e) => {
+            warn!("Error: {}", e);
             println!("Error: {}", e)
-        },
+        }
     }
+
+    log_mem(Level::Info);
+    info!("bye");
 }
