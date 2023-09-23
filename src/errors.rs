@@ -1,5 +1,6 @@
 use custom_error::custom_error;
+use std::io;
 
 custom_error! {pub ProgramError
-    UnknowShell {shell: String} = "Unknown shell: {shell}"
+    Io {source: io::Error}               = "error creating terminal instance from stdin: {source}",
 }
