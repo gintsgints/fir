@@ -3,7 +3,7 @@ use crossterm::{
     execute,
     terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen},
 };
-use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
     io::{stdout, Stdout},
     time::Duration,
@@ -14,7 +14,7 @@ use crate::errors::ProgramError;
 pub fn run() -> Result<(), ProgramError> {
     let mut terminal = setup_terminal()?;
     loop {
-        terminal.draw(crate::cli::render_app)?;
+        terminal.draw(crate::app::render_app)?;
         if should_quit()? {
             break;
         }
@@ -34,11 +34,6 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     Ok(terminal.show_cursor()?)
-}
-
-fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>) {
-    let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
-    frame.render_widget(greeting, frame.size());
 }
 
 fn should_quit() -> Result<bool, ProgramError> {
