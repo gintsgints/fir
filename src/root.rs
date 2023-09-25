@@ -1,8 +1,10 @@
 use std::ops::Deref;
 
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, List, Paragraph, Widget, ListItem}, text::Line,
+    prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    text::Line,
+    widgets::{block::Title, Block, BorderType, Borders, List, ListItem, Paragraph, Widget},
 };
 
 use crate::app_context::AppContext;
@@ -29,23 +31,35 @@ impl Widget for Root<'_> {
             .split(main[0]);
 
         let dir_r = self.context.right_path();
-        let dir_files_r: Vec<ListItem> = self.context.right_files().iter().map(|fb| {
-            ListItem::new(vec![Line::from(fb.display().to_string())])
-        }).collect();
+        let dir_files_r: Vec<ListItem> = self
+            .context
+            .right_files()
+            .iter()
+            .map(|fb| ListItem::new(vec![Line::from(fb.display().to_string())]))
+            .collect();
         let panel_r = List::new(dir_files_r).block(
             Block::default()
-                .title(dir_r.deref())
-                .borders(Borders::all()),
+                .title(Title::from(format!(" {} ", dir_r.deref())).alignment(Alignment::Center))
+                .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
+                .border_type(BorderType::Double)
+                .borders(Borders::all())
+                .style(Style::new().bg(Color::Blue)),
         );
 
         let dir_l = self.context.left_path();
-        let dir_files_l: Vec<ListItem> = self.context.right_files().iter().map(|fb| {
-            ListItem::new(vec![Line::from(fb.display().to_string())])
-        }).collect();
+        let dir_files_l: Vec<ListItem> = self
+            .context
+            .right_files()
+            .iter()
+            .map(|fb| ListItem::new(vec![Line::from(fb.display().to_string())]))
+            .collect();
         let panel_l = List::new(dir_files_l).block(
             Block::default()
-                .title(dir_l.deref())
-                .borders(Borders::all()),
+                .title(Title::from(format!(" {} ", dir_l.deref())).alignment(Alignment::Center))
+                .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
+                .border_type(BorderType::Double)
+                .borders(Borders::all())
+                .style(Style::new().bg(Color::Blue)),
         );
 
         let help = Block::default();
