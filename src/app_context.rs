@@ -12,13 +12,17 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new(left_path: &str, right_path: &str) -> Result<Self, ProgramError> {
-        let fl = read_file_list(left_path)?;
-        let fr = read_file_list(right_path)?;
+        let mut files_left = read_file_list(left_path)?;
+        files_left.sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
+        files_left.sort_by_key(|pb| !pb.is_dir());
+        let mut files_right = read_file_list(right_path)?;
+        files_right.sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
+        files_right.sort_by_key(|pb| !pb.is_dir());
         Ok(AppContext {
             left_panel_path: left_path.to_string(),
             right_panel_path: right_path.to_string(),
-            left_files_list: fl,
-            right_files_list: fr,
+            left_files_list: files_left,
+            right_files_list: files_right,
         })
     }
 

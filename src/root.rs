@@ -1,9 +1,9 @@
-use std::ops::Deref;
+use std::{ops::Deref, path::PathBuf};
 
 use ratatui::{
     prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    text::Line,
+    text::{Line, Span},
     widgets::{block::Title, Block, BorderType, Borders, List, ListItem, Paragraph, Widget},
 };
 
@@ -16,6 +16,16 @@ pub struct Root<'a> {
 impl<'a> Root<'a> {
     pub fn new(context: &'a AppContext) -> Self {
         Root { context }
+    }
+
+    fn create_file_item(&self, fb: &PathBuf) -> ListItem {
+        let style = if fb.is_dir() {
+            Style::new().fg(Color::White)
+        } else {
+            Style::new().fg(Color::Cyan)
+        };
+        let file_line = Line::from(vec![Span::styled(fb.display().to_string(), style)]);
+        ListItem::new(vec![file_line])
     }
 }
 
@@ -35,7 +45,7 @@ impl Widget for Root<'_> {
             .context
             .right_files()
             .iter()
-            .map(|fb| ListItem::new(vec![Line::from(fb.display().to_string())]))
+            .map(|fb| self.create_file_item(fb))
             .collect();
         let panel_r = List::new(dir_files_r).block(
             Block::default()
@@ -49,9 +59,9 @@ impl Widget for Root<'_> {
         let dir_l = self.context.left_path();
         let dir_files_l: Vec<ListItem> = self
             .context
-            .right_files()
+            .left_files()
             .iter()
-            .map(|fb| ListItem::new(vec![Line::from(fb.display().to_string())]))
+            .map(|fb| self.create_file_item(fb))
             .collect();
         let panel_l = List::new(dir_files_l).block(
             Block::default()
