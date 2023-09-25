@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
-use crate::{filelist::read_file_list, errors::ProgramError};
+use crate::{errors::ProgramError, filelist::read_file_list};
 
 #[derive(Debug, Default, Clone)]
 pub struct AppContext {
     left_panel_path: String,
     right_panel_path: String,
-    left_files: Vec<PathBuf>,
-    right_files: Vec<PathBuf>,
+    left_files_list: Vec<PathBuf>,
+    right_files_list: Vec<PathBuf>,
 }
 
 impl AppContext {
@@ -17,8 +17,8 @@ impl AppContext {
         Ok(AppContext {
             left_panel_path: left_path.to_string(),
             right_panel_path: right_path.to_string(),
-            left_files: fl,
-            right_files: fr,
+            left_files_list: fl,
+            right_files_list: fr,
         })
     }
 
@@ -28,5 +28,13 @@ impl AppContext {
 
     pub fn left_path(&self) -> String {
         self.left_panel_path.clone()
+    }
+
+    pub fn left_files(&self) -> Vec<PathBuf> {
+        self.left_files_list.clone()
+    }
+
+    pub fn right_files(&self) -> Vec<PathBuf> {
+        self.right_files_list.clone()
     }
 }

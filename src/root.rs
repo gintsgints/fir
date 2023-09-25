@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, Paragraph, Widget},
+    widgets::{Block, Borders, List, Paragraph, Widget, ListItem}, text::Line,
 };
 
 use crate::app_context::AppContext;
@@ -27,14 +27,27 @@ impl Widget for Root<'_> {
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(main[0]);
-        let dir_r = &self.context.right_path();
-        let panel_r = Block::default()
-            .title(dir_r.deref())
-            .borders(Borders::all());
-        let dir_l = &self.context.left_path();
-        let panel_l = Block::default()
-            .title(dir_l.deref())
-            .borders(Borders::all());
+
+        let dir_r = self.context.right_path();
+        let dir_files_r: Vec<ListItem> = self.context.right_files().iter().map(|fb| {
+            ListItem::new(vec![Line::from(fb.display().to_string())])
+        }).collect();
+        let panel_r = List::new(dir_files_r).block(
+            Block::default()
+                .title(dir_r.deref())
+                .borders(Borders::all()),
+        );
+
+        let dir_l = self.context.left_path();
+        let dir_files_l: Vec<ListItem> = self.context.right_files().iter().map(|fb| {
+            ListItem::new(vec![Line::from(fb.display().to_string())])
+        }).collect();
+        let panel_l = List::new(dir_files_l).block(
+            Block::default()
+                .title(dir_l.deref())
+                .borders(Borders::all()),
+        );
+
         let help = Block::default();
         let greeting = Paragraph::new("Welcome to FIR (press 'q' to quit)");
 

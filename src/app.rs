@@ -13,7 +13,7 @@ use crate::{errors::ProgramError, root::Root, app_context::AppContext};
 
 pub fn run() -> Result<(), ProgramError> {
     let mut terminal = setup_terminal()?;
-    let context = AppContext::new("/Users/polisgints", "/Users/polisgints")?;
+    let context = AppContext::new(".", ".")?;
     loop {
         terminal.draw(|frame|frame.render_widget(Root::new(&context), frame.size()))?;
         if should_quit()? {
