@@ -4,7 +4,10 @@ use ratatui::{
     prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{block::Title, Block, BorderType, Borders, List, ListItem, Paragraph, Widget},
+    widgets::{
+        block::Title, Block, BorderType, Borders, List, ListItem, ListState, Paragraph,
+        StatefulWidget, Widget,
+    },
 };
 
 use crate::app_context::AppContext;
@@ -47,14 +50,16 @@ impl Widget for Root<'_> {
             .iter()
             .map(|fb| self.create_file_item(fb))
             .collect();
-        let panel_r = List::new(dir_files_r).block(
-            Block::default()
-                .title(Title::from(format!(" {} ", dir_r.deref())).alignment(Alignment::Center))
-                .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
-                .border_type(BorderType::Double)
-                .borders(Borders::all())
-                .style(Style::new().bg(Color::Blue)),
-        );
+        let panel_r = List::new(dir_files_r)
+            .block(
+                Block::default()
+                    .title(Title::from(format!(" {} ", dir_r.deref())).alignment(Alignment::Center))
+                    .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
+                    .border_type(BorderType::Double)
+                    .borders(Borders::all())
+                    .style(Style::new().bg(Color::Blue)),
+            )
+            .highlight_style(Style::new().bg(Color::Cyan));
 
         let dir_l = self.context.left_path();
         let dir_files_l: Vec<ListItem> = self
@@ -63,20 +68,24 @@ impl Widget for Root<'_> {
             .iter()
             .map(|fb| self.create_file_item(fb))
             .collect();
-        let panel_l = List::new(dir_files_l).block(
-            Block::default()
-                .title(Title::from(format!(" {} ", dir_l.deref())).alignment(Alignment::Center))
-                .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
-                .border_type(BorderType::Double)
-                .borders(Borders::all())
-                .style(Style::new().bg(Color::Blue)),
-        );
+        let panel_l = List::new(dir_files_l)
+            .block(
+                Block::default()
+                    .title(Title::from(format!(" {} ", dir_l.deref())).alignment(Alignment::Center))
+                    .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
+                    .border_type(BorderType::Double)
+                    .borders(Borders::all())
+                    .style(Style::new().bg(Color::Blue)),
+            )
+            .highlight_style(Style::new().bg(Color::Cyan));
 
         let help = Block::default();
         let greeting = Paragraph::new("Welcome to FIR (press 'q' to quit)");
 
-        panel_l.render(panels[0], buf);
-        panel_r.render(panels[1], buf);
+        let mut l_state = ListState::default().with_selected(self.context.left_selection_index());
+        let mut r_state = ListState::default().with_selected(self.context.right_selection_index());
+        StatefulWidget::render(panel_l, panels[0], buf, &mut l_state);
+        StatefulWidget::render(panel_r, panels[1], buf, &mut r_state);
         greeting.clone().block(help).render(main[1], buf);
     }
 }
