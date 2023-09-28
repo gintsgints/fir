@@ -80,7 +80,7 @@ impl Widget for Root<'_> {
             .highlight_style(Style::new().bg(Color::Cyan));
 
         let help = Block::default();
-        let greeting = Paragraph::new("Welcome to FIR (press 'q' to quit)");
+        let greeting = Paragraph::new("Welcome to FIR (press 'q' to quit, 'tab' to switch panels)");
 
         let mut l_state = ListState::default().with_selected(self.context.left_selection_index());
         let mut r_state = ListState::default().with_selected(self.context.right_selection_index());

@@ -1,16 +1,14 @@
-use cli_log::{init_cli_log, warn, log_mem, Level, info};
+use cli_log::{info, init_cli_log, log_mem, Level};
+use fir::{app::App, errors::ProgramError};
 
-fn main() {
+fn main() -> Result<(), ProgramError> {
     init_cli_log!();
 
-    match fir::app::run() {
-        Ok(()) => {}
-        Err(e) => {
-            warn!("Error: {}", e);
-            eprintln!("{e}");
-        }
-    }
+    let mut application = App::new()?;
+
+    application.run()?;
 
     log_mem(Level::Info);
     info!("bye");
+    Ok(())
 }
