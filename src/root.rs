@@ -78,7 +78,7 @@ impl Widget for Root<'_> {
                     .borders(Borders::all())
                     .style(Style::new().bg(Color::Blue)),
             )
-            .highlight_style(Style::new().bg(Color::Cyan));
+            .highlight_style(Style::new().bg(Color::Cyan).fg(Color::Black));
 
         let help = Block::default();
         let greeting = Paragraph::new("Welcome to FIR (press 'q' to quit, 'tab' to switch panels)");
