@@ -10,7 +10,7 @@ use ratatui::{
     },
 };
 
-use crate::app_context::AppContext;
+use crate::{app_context::AppContext, filelist};
 
 pub struct Root<'a> {
     context: &'a AppContext,
@@ -27,7 +27,7 @@ impl<'a> Root<'a> {
         } else {
             Style::new().fg(Color::Cyan)
         };
-        let file_name = fb.file_name().expect("msg").to_str().expect("msg");
+        let file_name = filelist::file_name(&fb);
         let file_line = Line::from(vec![Span::styled(file_name.to_string(), style)]);
         ListItem::new(vec![file_line])
     }

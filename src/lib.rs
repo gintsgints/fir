@@ -3,3 +3,4 @@ pub mod app;
 pub mod errors;
 pub mod filelist;
 pub mod root;
+pub mod commands;

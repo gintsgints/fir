@@ -1,6 +1,7 @@
+use std::env;
 use std::path::PathBuf;
 
-use crate::{errors::ProgramError, filelist::read_file_list};
+use crate::{commands::Command, errors::ProgramError, filelist::read_file_list};
 
 #[derive(Clone, PartialEq)]
 enum SelectedPanel {
@@ -9,38 +10,73 @@ enum SelectedPanel {
 }
 
 #[derive(Clone)]
+pub struct Panel {
+    path: String,
+    files: Vec<PathBuf>,
+    index: usize,
+}
+
+#[derive(Clone)]
 pub struct AppContext {
     pub should_quit: bool,
-    left_panel_path: String,
-    right_panel_path: String,
-    left_files_list: Vec<PathBuf>,
-    right_files_list: Vec<PathBuf>,
+    left_panel: Panel,
+    right_panel: Panel,
     current_panel: SelectedPanel,
-    left_selection_index: usize,
-    right_selection_index: usize,
 }
 
 impl AppContext {
-    pub fn new(left_path: &str, right_path: &str) -> Result<Self, ProgramError> {
-        let mut files_left = read_file_list(left_path)?;
+    pub fn new() -> Result<Self, ProgramError> {
+        let left_path = env::current_dir()?.display().to_string();
+        let right_path = env::current_dir()?.display().to_string();
+        let mut files_left = read_file_list(&left_path)?;
         files_left
             .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
         files_left.sort_by_key(|pb| !pb.is_dir());
-        let mut files_right = read_file_list(right_path)?;
+        let mut files_right = read_file_list(&right_path)?;
         files_right
             .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
         files_right.sort_by_key(|pb| !pb.is_dir());
 
+        let left_panel = Panel {
+            path: left_path,
+            files: files_left,
+            index: 0,
+        };
+        let right_panel = Panel {
+            path: right_path,
+            files: files_right,
+            index: 0,
+        };
+
         Ok(AppContext {
             should_quit: false,
-            left_panel_path: left_path.to_string(),
-            right_panel_path: right_path.to_string(),
-            left_files_list: files_left,
-            right_files_list: files_right,
+            left_panel,
+            right_panel,
             current_panel: SelectedPanel::Left,
-            right_selection_index: 0,
-            left_selection_index: 0,
         })
+    }
+
+    fn current_path(&self) -> String {
+        match self.current_panel {
+            SelectedPanel::Left => self.left_panel.path.clone(),
+            SelectedPanel::Right => self.right_panel.path.clone(),
+        }
+    }
+
+    fn current_panel(&mut self) -> &mut Panel {
+        match self.current_panel {
+            SelectedPanel::Left => &mut self.left_panel,
+            SelectedPanel::Right => &mut self.right_panel,
+        }
+    }
+
+    pub fn apply_cmd(&mut self, cmd: Command) {
+        match cmd {
+            Command::cd => {
+                // self.current_path()
+                self.current_panel().path = String::from(".");
+            }
+        }
     }
 
     pub fn tab(&mut self) {
@@ -57,12 +93,12 @@ impl AppContext {
     pub fn key_up(&mut self) {
         match self.current_panel {
             SelectedPanel::Left => {
-                self.left_selection_index =
-                    self.left_selection_index.saturating_sub(1) % self.left_files_list.len();
+                self.left_panel.index =
+                    self.left_panel.index.saturating_sub(1) % self.left_panel.files.len();
             }
             SelectedPanel::Right => {
-                self.right_selection_index =
-                    self.right_selection_index.saturating_sub(1) % self.right_files_list.len();
+                self.right_panel.index =
+                    self.right_panel.index.saturating_sub(1) % self.right_panel.files.len();
             }
         }
     }
@@ -70,26 +106,26 @@ impl AppContext {
     pub fn key_down(&mut self) {
         match self.current_panel {
             SelectedPanel::Left => {
-                self.left_selection_index =
-                    self.left_selection_index.saturating_add(1) % self.left_files_list.len();
+                self.left_panel.index =
+                    self.left_panel.index.saturating_add(1) % self.left_panel.files.len();
             }
             SelectedPanel::Right => {
-                self.right_selection_index =
-                    self.right_selection_index.saturating_add(1) % self.right_files_list.len();
+                self.right_panel.index =
+                    self.right_panel.index.saturating_add(1) % self.right_panel.files.len();
             }
         }
     }
 
     pub fn right_selection_index(&self) -> Option<usize> {
         match self.current_panel {
-            SelectedPanel::Right => Some(self.right_selection_index),
+            SelectedPanel::Right => Some(self.right_panel.index),
             SelectedPanel::Left => None,
         }
     }
 
     pub fn left_selection_index(&self) -> Option<usize> {
         match self.current_panel {
-            SelectedPanel::Left => Some(self.left_selection_index),
+            SelectedPanel::Left => Some(self.left_panel.index),
             SelectedPanel::Right => None,
         }
     }
@@ -103,18 +139,18 @@ impl AppContext {
     }
 
     pub fn right_path(&self) -> String {
-        self.right_panel_path.clone()
+        self.right_panel.path.clone()
     }
 
     pub fn left_path(&self) -> String {
-        self.left_panel_path.clone()
+        self.left_panel.path.clone()
     }
 
     pub fn left_files(&self) -> Vec<PathBuf> {
-        self.left_files_list.clone()
+        self.left_panel.files.clone()
     }
 
     pub fn right_files(&self) -> Vec<PathBuf> {
-        self.right_files_list.clone()
+        self.right_panel.files.clone()
     }
 }

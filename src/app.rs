@@ -17,7 +17,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Result<Self, ProgramError> {
-        let context = AppContext::new(".", ".")?;
+        let context = AppContext::new()?;
         Ok(App { context })
     }
 
@@ -54,6 +54,7 @@ impl App {
                 Event::Key(key) => {
                     match key.code {
                         KeyCode::Char('q') => self.context.should_quit = true,
+                        KeyCode::Enter => self.context.apply_cmd(crate::commands::Command::cd),
                         KeyCode::Up => self.context.key_up(),
                         KeyCode::Down => self.context.key_down(),
                         KeyCode::Tab => self.context.tab(),
