@@ -1,7 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
-use crate::{commands::Command, errors::ProgramError, filelist::read_file_list};
+use crate::{commands::Command, errors::ProgramError, filelist::{read_file_list, self}};
 
 #[derive(Clone, PartialEq)]
 enum SelectedPanel {
@@ -11,9 +11,15 @@ enum SelectedPanel {
 
 #[derive(Clone)]
 pub struct Panel {
-    path: String,
+    path: PathBuf,
     files: Vec<PathBuf>,
     index: usize,
+}
+
+impl Panel {
+    fn current_filename(&mut self) -> String {
+        filelist::file_name(self.files.get(self.index).expect("Index points on nonexistent file"))
+    }
 }
 
 #[derive(Clone)]
@@ -26,8 +32,8 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new() -> Result<Self, ProgramError> {
-        let left_path = env::current_dir()?.display().to_string();
-        let right_path = env::current_dir()?.display().to_string();
+        let left_path = env::current_dir()?;
+        let right_path = env::current_dir()?;
         let mut files_left = read_file_list(&left_path)?;
         files_left
             .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
@@ -56,13 +62,6 @@ impl AppContext {
         })
     }
 
-    fn current_path(&self) -> String {
-        match self.current_panel {
-            SelectedPanel::Left => self.left_panel.path.clone(),
-            SelectedPanel::Right => self.right_panel.path.clone(),
-        }
-    }
-
     fn current_panel(&mut self) -> &mut Panel {
         match self.current_panel {
             SelectedPanel::Left => &mut self.left_panel,
@@ -74,7 +73,8 @@ impl AppContext {
         match cmd {
             Command::cd => {
                 // self.current_path()
-                self.current_panel().path = String::from(".");
+                // self.current_panel().path = self.current_panel().current_filename();
+                // self.current_panel().path.push("path")?;
             }
         }
     }
@@ -139,11 +139,11 @@ impl AppContext {
     }
 
     pub fn right_path(&self) -> String {
-        self.right_panel.path.clone()
+        self.right_panel.path.display().to_string()
     }
 
     pub fn left_path(&self) -> String {
-        self.left_panel.path.clone()
+        self.left_panel.path.display().to_string()
     }
 
     pub fn left_files(&self) -> Vec<PathBuf> {
