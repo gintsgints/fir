@@ -34,6 +34,7 @@ impl Panel {
         self.files
             .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
         self.files.sort_by_key(|pb| !pb.is_dir());
+        self.index = 0;
         Ok(())
     }
 }
