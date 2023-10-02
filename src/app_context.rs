@@ -1,7 +1,11 @@
 use std::env;
 use std::path::PathBuf;
 
-use crate::{commands::Command, errors::ProgramError, filelist::{read_file_list, self, file_name}};
+use crate::{
+    commands::Command,
+    errors::ProgramError,
+    filelist::{self, read_file_list},
+};
 
 #[derive(Clone, PartialEq)]
 enum SelectedPanel {
@@ -18,7 +22,11 @@ pub struct Panel {
 
 impl Panel {
     fn current_filename(&mut self) -> String {
-        filelist::file_name(self.files.get(self.index).expect("Index points on nonexistent file"))
+        filelist::file_name(
+            self.files
+                .get(self.index)
+                .expect("Index points on nonexistent file"),
+        )
     }
 
     fn read_files(&mut self) -> Result<(), ProgramError> {
@@ -39,7 +47,6 @@ pub struct AppContext {
 }
 
 impl AppContext {
-
     pub fn new() -> Result<Self, ProgramError> {
         let mut left_panel = Panel {
             path: env::current_dir()?,
@@ -71,7 +78,7 @@ impl AppContext {
 
     pub fn apply_cmd(&mut self, cmd: Command) -> Result<(), ProgramError> {
         match cmd {
-            Command::cd => {
+            Command::Cd => {
                 let file = self.current_panel().current_filename();
                 self.current_panel().path.push(&file);
                 self.current_panel().path = self.current_panel().path.canonicalize()?;

@@ -13,7 +13,11 @@ pub fn read_file_list(directory: &PathBuf) -> Result<Vec<PathBuf>, ProgramError>
 
 pub fn file_name(fb: &PathBuf) -> String {
     match fb.file_name() {
-        Some(found_name) => String::from(found_name.to_str().expect("Not able to convert file name to string")),
-        None => String::from("..")
+        Some(found_name) => String::from(
+            found_name
+                .to_str()
+                .expect("Not able to convert file name to string"),
+        ),
+        None => String::from(".."),
     }
 }
