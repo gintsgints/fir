@@ -1,7 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
-use crate::{commands::Command, errors::ProgramError, filelist::{read_file_list, self}};
+use crate::{commands::Command, errors::ProgramError, filelist::{read_file_list, self, file_name}};
 
 #[derive(Clone, PartialEq)]
 enum SelectedPanel {
@@ -20,6 +20,14 @@ impl Panel {
     fn current_filename(&mut self) -> String {
         filelist::file_name(self.files.get(self.index).expect("Index points on nonexistent file"))
     }
+
+    fn read_files(&mut self) -> Result<(), ProgramError> {
+        self.files = read_file_list(&self.path)?;
+        self.files
+            .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
+        self.files.sort_by_key(|pb| !pb.is_dir());
+        Ok(())
+    }
 }
 
 #[derive(Clone)]
@@ -31,28 +39,20 @@ pub struct AppContext {
 }
 
 impl AppContext {
-    pub fn new() -> Result<Self, ProgramError> {
-        let left_path = env::current_dir()?;
-        let right_path = env::current_dir()?;
-        let mut files_left = read_file_list(&left_path)?;
-        files_left
-            .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
-        files_left.sort_by_key(|pb| !pb.is_dir());
-        let mut files_right = read_file_list(&right_path)?;
-        files_right
-            .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
-        files_right.sort_by_key(|pb| !pb.is_dir());
 
-        let left_panel = Panel {
-            path: left_path,
-            files: files_left,
+    pub fn new() -> Result<Self, ProgramError> {
+        let mut left_panel = Panel {
+            path: env::current_dir()?,
+            files: vec![],
             index: 0,
         };
-        let right_panel = Panel {
-            path: right_path,
-            files: files_right,
+        left_panel.read_files()?;
+        let mut right_panel = Panel {
+            path: env::current_dir()?,
+            files: vec![],
             index: 0,
         };
+        right_panel.read_files()?;
 
         Ok(AppContext {
             should_quit: false,
@@ -69,14 +69,16 @@ impl AppContext {
         }
     }
 
-    pub fn apply_cmd(&mut self, cmd: Command) {
+    pub fn apply_cmd(&mut self, cmd: Command) -> Result<(), ProgramError> {
         match cmd {
             Command::cd => {
-                // self.current_path()
-                // self.current_panel().path = self.current_panel().current_filename();
-                // self.current_panel().path.push("path")?;
+                let file = self.current_panel().current_filename();
+                self.current_panel().path.push(&file);
+                self.current_panel().path = self.current_panel().path.canonicalize()?;
+                self.current_panel().read_files()?;
             }
-        }
+        };
+        Ok(())
     }
 
     pub fn tab(&mut self) {
