@@ -3,24 +3,30 @@ pub mod panel_item_context;
 
 use std::process::Command;
 
+use tui_textarea::TextArea;
+
 use crate::{commands::AppCommand, errors::ProgramError};
 
 use self::panel_context::PanelContext;
 use self::panel_item_context::PanelItemContext;
 
 #[derive(Clone)]
-pub struct AppContext {
+pub struct AppContext<'a> {
     pub should_quit: bool,
     left_context: PanelContext,
     right_context: PanelContext,
+    pub editor_active: bool,
+    pub textarea: TextArea<'a>,
 }
 
-impl AppContext {
+impl<'a> AppContext<'a> {
     pub fn new() -> Result<Self, ProgramError> {
         Ok(AppContext {
             should_quit: false,
             left_context: PanelContext::new(true)?.to_owned(),
             right_context: PanelContext::new(false)?.to_owned(),
+            editor_active: false,
+            textarea: TextArea::default(),
         })
     }
 

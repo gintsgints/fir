@@ -6,7 +6,7 @@ use ratatui::{
 use crate::{app_context::AppContext, help_line::HelpLine, panel::Panel};
 
 pub struct Root<'a> {
-    context: &'a AppContext,
+    context: &'a AppContext<'a>,
 }
 
 impl<'a> Root<'a> {
@@ -17,6 +17,10 @@ impl<'a> Root<'a> {
 
 impl Widget for Root<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        if self.context.editor_active {
+            self.context.textarea.widget().render(area, buf);
+            return;
+        }
         let main = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(0), Constraint::Length(1)])
