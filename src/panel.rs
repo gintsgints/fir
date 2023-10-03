@@ -46,11 +46,16 @@ impl Widget for Panel<'_> {
             .iter()
             .map(|fb| self.create_file_item(fb))
             .collect();
+
+        let mut title_style = Style::new();
+        if self.context.active {
+            title_style = title_style.bg(Color::Cyan).fg(Color::Black);
+        }
         let panel = List::new(dir_files_r)
             .block(
                 Block::default()
                     .title(Title::from(format!(" {} ", &dir_r)).alignment(Alignment::Center))
-                    .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
+                    .title_style(title_style)
                     .border_type(BorderType::Double)
                     .borders(Borders::all())
                     .style(Style::new().bg(Color::Blue)),
