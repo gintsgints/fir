@@ -1,18 +1,19 @@
-use std::{ops::Deref, path::PathBuf};
+use std::ops::Deref;
 
 use ratatui::{
     prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{
-        block::Title, Block, BorderType, Borders, List, ListItem, ListState, Paragraph,
+        block::Title, Block, BorderType, Borders, List, ListItem, ListState,
         StatefulWidget, Widget,
     },
 };
 
 use crate::{
-    app_context::{AppContext, PanelItem},
+    app_context::{panel_item_context::PanelItemContext, AppContext},
     filelist,
+    help_line::HelpLine,
 };
 
 pub struct Root<'a> {
@@ -24,7 +25,7 @@ impl<'a> Root<'a> {
         Root { context }
     }
 
-    fn create_file_item(&self, fb: &PanelItem) -> ListItem {
+    fn create_file_item(&self, fb: &PanelItemContext) -> ListItem {
         let style = if *fb.marked() {
             Style::new().fg(Color::Yellow)
         } else {
@@ -87,13 +88,10 @@ impl Widget for Root<'_> {
             )
             .highlight_style(Style::new().bg(Color::Cyan).fg(Color::Black));
 
-        let help = Block::default();
-        let greeting = Paragraph::new("Welcome to FIR (press 'q' to quit, 'tab' to switch panels)");
-
         let mut l_state = ListState::default().with_selected(self.context.left_selection_index());
         let mut r_state = ListState::default().with_selected(self.context.right_selection_index());
         StatefulWidget::render(panel_l, panels[0], buf, &mut l_state);
         StatefulWidget::render(panel_r, panels[1], buf, &mut r_state);
-        greeting.clone().block(help).render(main[1], buf);
+        HelpLine::new().render(main[1], buf);
     }
 }

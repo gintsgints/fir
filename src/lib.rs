@@ -4,3 +4,5 @@ pub mod errors;
 pub mod filelist;
 pub mod root;
 pub mod commands;
+mod help_line;
+mod panel;

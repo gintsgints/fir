@@ -1,15 +1,15 @@
 use std::{fs, path::PathBuf};
 
-use crate::{app_context::PanelItem, errors::ProgramError};
+use crate::{app_context::panel_item_context::PanelItemContext, errors::ProgramError};
 
-pub fn read_file_list(directory: &PathBuf) -> Result<Vec<PanelItem>, ProgramError> {
+pub fn read_file_list(directory: &PathBuf) -> Result<Vec<PanelItemContext>, ProgramError> {
     let paths = fs::read_dir(directory)?;
-    let mut dirs: Vec<PanelItem> = paths
-        .filter_map(|path| Some(PanelItem::new(path.ok()?.path())))
+    let mut dirs: Vec<PanelItemContext> = paths
+        .filter_map(|path| Some(PanelItemContext::new(path.ok()?.path())))
         .collect();
     let mut back_path = PathBuf::new();
     back_path.push("..");
-    dirs.push(PanelItem::new(back_path));
+    dirs.push(PanelItemContext::new(back_path));
     Ok(dirs)
 }
 
