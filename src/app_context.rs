@@ -1,7 +1,6 @@
 pub mod panel_context;
 pub mod panel_item_context;
 
-use std::env::{self};
 use std::process::Command;
 
 use crate::{commands::AppCommand, errors::ProgramError};
@@ -9,34 +8,27 @@ use crate::{commands::AppCommand, errors::ProgramError};
 use self::panel_context::PanelContext;
 use self::panel_item_context::PanelItemContext;
 
-#[derive(Clone, PartialEq)]
-enum ActivePanel {
-    Left,
-    Right,
-}
-
 #[derive(Clone)]
 pub struct AppContext {
     pub should_quit: bool,
-    left_panel: PanelContext,
-    right_panel: PanelContext,
-    active_panel: ActivePanel,
+    left_context: PanelContext,
+    right_context: PanelContext,
 }
 
 impl AppContext {
     pub fn new() -> Result<Self, ProgramError> {
         Ok(AppContext {
             should_quit: false,
-            left_panel: PanelContext::new(env::current_dir()?)?.to_owned(),
-            right_panel: PanelContext::new(env::current_dir()?)?.to_owned(),
-            active_panel: ActivePanel::Left,
+            left_context: PanelContext::new(true)?.to_owned(),
+            right_context: PanelContext::new(false)?.to_owned(),
         })
     }
 
     pub fn current_panel(&mut self) -> &mut PanelContext {
-        match self.active_panel {
-            ActivePanel::Left => &mut self.left_panel,
-            ActivePanel::Right => &mut self.right_panel,
+        if self.left_context.active {
+            &mut self.left_context
+        } else {
+            &mut self.right_context
         }
     }
 
@@ -68,14 +60,8 @@ impl AppContext {
     }
 
     pub fn tab(&mut self) {
-        match self.active_panel {
-            ActivePanel::Left => {
-                self.active_panel = ActivePanel::Right;
-            }
-            ActivePanel::Right => {
-                self.active_panel = ActivePanel::Left;
-            }
-        }
+        self.left_context.active = !self.left_context.active;
+        self.right_context.active = !self.right_context.active;
     }
 
     pub fn key_up(&mut self, times: usize, with_select: bool) {
@@ -92,33 +78,27 @@ impl AppContext {
         self.current_panel().add_index(times);
     }
 
-    pub fn right_selection_index(&self) -> Option<usize> {
-        match self.active_panel {
-            ActivePanel::Right => Some(self.right_panel.index()),
-            ActivePanel::Left => None,
-        }
+    pub fn right_context(&self) -> &PanelContext {
+        &self.right_context
     }
 
-    pub fn left_selection_index(&self) -> Option<usize> {
-        match self.active_panel {
-            ActivePanel::Left => Some(self.left_panel.index()),
-            ActivePanel::Right => None,
-        }
+    pub fn left_context(&self) -> &PanelContext {
+        &self.left_context
     }
 
     pub fn right_path(&self) -> String {
-        self.right_panel.path_string()
+        self.right_context.path_string()
     }
 
     pub fn left_path(&self) -> String {
-        self.left_panel.path_string()
+        self.left_context.path_string()
     }
 
     pub fn left_files(&self) -> Vec<PanelItemContext> {
-        self.left_panel.items()
+        self.left_context.items()
     }
 
     pub fn right_files(&self) -> Vec<PanelItemContext> {
-        self.right_panel.items()
+        self.right_context.items()
     }
 }

@@ -1,4 +1,4 @@
-use std::{env::set_current_dir, path::PathBuf};
+use std::{env::{set_current_dir, self}, path::PathBuf};
 
 use crate::{
     errors::ProgramError,
@@ -9,14 +9,17 @@ use super::panel_item_context::PanelItemContext;
 
 #[derive(Clone)]
 pub struct PanelContext {
+    pub active: bool,
     path: PathBuf,
     items: Vec<PanelItemContext>,
     index: usize,
 }
 
 impl PanelContext {
-    pub fn new(path: PathBuf) -> Result<Self, ProgramError> {
+    pub fn new(active: bool) -> Result<Self, ProgramError> {
+        let path = env::current_dir()?;
         let mut result = PanelContext {
+            active,
             path,
             items: vec![],
             index: 0,

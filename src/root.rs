@@ -1,20 +1,9 @@
-use std::ops::Deref;
-
 use ratatui::{
-    prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
-    text::{Line, Span},
-    widgets::{
-        block::Title, Block, BorderType, Borders, List, ListItem, ListState,
-        StatefulWidget, Widget,
-    },
+    prelude::{Buffer, Constraint, Direction, Layout, Rect},
+    widgets::Widget,
 };
 
-use crate::{
-    app_context::{panel_item_context::PanelItemContext, AppContext},
-    filelist,
-    help_line::HelpLine,
-};
+use crate::{app_context::AppContext, help_line::HelpLine, panel::Panel};
 
 pub struct Root<'a> {
     context: &'a AppContext,
@@ -23,21 +12,6 @@ pub struct Root<'a> {
 impl<'a> Root<'a> {
     pub fn new(context: &'a AppContext) -> Self {
         Root { context }
-    }
-
-    fn create_file_item(&self, fb: &PanelItemContext) -> ListItem {
-        let style = if *fb.marked() {
-            Style::new().fg(Color::Yellow)
-        } else {
-            if fb.path().is_dir() {
-                Style::new().fg(Color::White)
-            } else {
-                Style::new().fg(Color::Cyan)
-            }
-        };
-        let file_name = filelist::file_name(&fb.path());
-        let file_line = Line::from(vec![Span::styled(file_name.to_string(), style)]);
-        ListItem::new(vec![file_line])
     }
 }
 
@@ -52,46 +26,10 @@ impl Widget for Root<'_> {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(main[0]);
 
-        let dir_r = self.context.right_path();
-        let dir_files_r: Vec<ListItem> = self
-            .context
-            .right_files()
-            .iter()
-            .map(|fb| self.create_file_item(fb))
-            .collect();
-        let panel_r = List::new(dir_files_r)
-            .block(
-                Block::default()
-                    .title(Title::from(format!(" {} ", dir_r.deref())).alignment(Alignment::Center))
-                    .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
-                    .border_type(BorderType::Double)
-                    .borders(Borders::all())
-                    .style(Style::new().bg(Color::Blue)),
-            )
-            .highlight_style(Style::new().bg(Color::Cyan));
-
-        let dir_l = self.context.left_path();
-        let dir_files_l: Vec<ListItem> = self
-            .context
-            .left_files()
-            .iter()
-            .map(|fb| self.create_file_item(fb))
-            .collect();
-        let panel_l = List::new(dir_files_l)
-            .block(
-                Block::default()
-                    .title(Title::from(format!(" {} ", dir_l.deref())).alignment(Alignment::Center))
-                    .title_style(Style::new().bg(Color::Cyan).fg(Color::Black))
-                    .border_type(BorderType::Double)
-                    .borders(Borders::all())
-                    .style(Style::new().bg(Color::Blue)),
-            )
-            .highlight_style(Style::new().bg(Color::Cyan).fg(Color::Black));
-
-        let mut l_state = ListState::default().with_selected(self.context.left_selection_index());
-        let mut r_state = ListState::default().with_selected(self.context.right_selection_index());
-        StatefulWidget::render(panel_l, panels[0], buf, &mut l_state);
-        StatefulWidget::render(panel_r, panels[1], buf, &mut r_state);
+        let l_panel = Panel::new(self.context.left_context());
+        l_panel.render(panels[0], buf);
+        let r_panel = Panel::new(self.context.right_context());
+        r_panel.render(panels[1], buf);
         HelpLine::new().render(main[1], buf);
     }
 }
