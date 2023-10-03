@@ -11,7 +11,7 @@ use std::{
 
 use crate::{
     app_context::AppContext,
-    commands::AppCommand::{Cd, Open},
+    commands::AppCommand::*,
     errors::ProgramError,
     root::Root,
 };
@@ -66,8 +66,10 @@ impl App {
                                 self.context.apply_cmd(Open)?
                             }
                         }
-                        KeyCode::Up => self.context.key_up(),
-                        KeyCode::Down => self.context.key_down(),
+                        KeyCode::Left => self.context.key_up(20),
+                        KeyCode::Right => self.context.key_down(20),
+                        KeyCode::Up => self.context.key_up(1),
+                        KeyCode::Down => self.context.key_down(1),
                         KeyCode::Tab => self.context.tab(),
                         _ => {}
                     }

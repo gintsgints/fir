@@ -51,7 +51,7 @@ pub struct AppContext {
     pub should_quit: bool,
     left_panel: Panel,
     right_panel: Panel,
-    current_panel: SelectedPanel,
+    active_panel: SelectedPanel,
 }
 
 impl AppContext {
@@ -73,12 +73,12 @@ impl AppContext {
             should_quit: false,
             left_panel,
             right_panel,
-            current_panel: SelectedPanel::Left,
+            active_panel: SelectedPanel::Left,
         })
     }
 
     pub fn current_panel(&mut self) -> &mut Panel {
-        match self.current_panel {
+        match self.active_panel {
             SelectedPanel::Left => &mut self.left_panel,
             SelectedPanel::Right => &mut self.right_panel,
         }
@@ -114,62 +114,42 @@ impl AppContext {
     }
 
     pub fn tab(&mut self) {
-        match self.current_panel {
+        match self.active_panel {
             SelectedPanel::Left => {
-                self.current_panel = SelectedPanel::Right;
+                self.active_panel = SelectedPanel::Right;
             }
             SelectedPanel::Right => {
-                self.current_panel = SelectedPanel::Left;
+                self.active_panel = SelectedPanel::Left;
             }
         }
     }
 
-    pub fn key_up(&mut self) {
-        match self.current_panel {
-            SelectedPanel::Left => {
-                self.left_panel.index =
-                    self.left_panel.index.saturating_sub(1) % self.left_panel.files.len();
-            }
-            SelectedPanel::Right => {
-                self.right_panel.index =
-                    self.right_panel.index.saturating_sub(1) % self.right_panel.files.len();
-            }
-        }
+    pub fn key_up(&mut self, times: usize) {
+        self.current_panel().index =
+            self.current_panel().index.saturating_sub(times) % self.current_panel().files.len();
     }
 
-    pub fn key_down(&mut self) {
-        match self.current_panel {
-            SelectedPanel::Left => {
-                self.left_panel.index =
-                    self.left_panel.index.saturating_add(1) % self.left_panel.files.len();
-            }
-            SelectedPanel::Right => {
-                self.right_panel.index =
-                    self.right_panel.index.saturating_add(1) % self.right_panel.files.len();
-            }
+    pub fn key_down(&mut self, times: usize) {
+        let new_index = self.current_panel().index.saturating_add(times) % self.current_panel().files.len();
+        if new_index > self.current_panel().index {
+            self.current_panel().index = new_index;
+        } else {
+            self.current_panel().index = self.current_panel().files.len() - 1;
         }
     }
 
     pub fn right_selection_index(&self) -> Option<usize> {
-        match self.current_panel {
+        match self.active_panel {
             SelectedPanel::Right => Some(self.right_panel.index),
             SelectedPanel::Left => None,
         }
     }
 
     pub fn left_selection_index(&self) -> Option<usize> {
-        match self.current_panel {
+        match self.active_panel {
             SelectedPanel::Left => Some(self.left_panel.index),
             SelectedPanel::Right => None,
         }
-    }
-
-    pub fn is_right_active(&self) -> bool {
-        self.current_panel == SelectedPanel::Right
-    }
-
-    pub fn is_left_active(&self) -> bool {
-        self.current_panel == SelectedPanel::Left
     }
 
     pub fn right_path(&self) -> String {
