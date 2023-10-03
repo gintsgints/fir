@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event, KeyCode, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -9,12 +9,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{
-    app_context::AppContext,
-    commands::AppCommand::*,
-    errors::ProgramError,
-    root::Root,
-};
+use crate::{app_context::AppContext, commands::AppCommand::*, errors::ProgramError, root::Root};
 
 pub struct App {
     context: AppContext,
@@ -60,16 +55,21 @@ impl App {
                     match key.code {
                         KeyCode::Char('q') => self.context.should_quit = true,
                         KeyCode::Enter => {
-                            if self.context.current_file().is_dir() {
+                            if self.context.current_item_is_dir() {
                                 self.context.apply_cmd(Cd)?
                             } else {
                                 self.context.apply_cmd(Open)?
                             }
                         }
-                        KeyCode::Left => self.context.key_up(20),
-                        KeyCode::Right => self.context.key_down(20),
-                        KeyCode::Up => self.context.key_up(1),
-                        KeyCode::Down => self.context.key_down(1),
+                        KeyCode::Char(' ') => self.context.key_down(1, true),
+                        KeyCode::Up => self
+                            .context
+                            .key_up(1, key.modifiers.contains(KeyModifiers::SHIFT)),
+                        KeyCode::Down => self
+                            .context
+                            .key_down(1, key.modifiers.contains(KeyModifiers::SHIFT)),
+                        KeyCode::Left => self.context.key_up(20, false),
+                        KeyCode::Right => self.context.key_down(20, false),
                         KeyCode::Tab => self.context.tab(),
                         _ => {}
                     }

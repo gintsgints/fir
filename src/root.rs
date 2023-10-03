@@ -10,7 +10,10 @@ use ratatui::{
     },
 };
 
-use crate::{app_context::AppContext, filelist};
+use crate::{
+    app_context::{AppContext, PanelItem},
+    filelist,
+};
 
 pub struct Root<'a> {
     context: &'a AppContext,
@@ -21,13 +24,17 @@ impl<'a> Root<'a> {
         Root { context }
     }
 
-    fn create_file_item(&self, fb: &PathBuf) -> ListItem {
-        let style = if fb.is_dir() {
-            Style::new().fg(Color::White)
+    fn create_file_item(&self, fb: &PanelItem) -> ListItem {
+        let style = if *fb.marked() {
+            Style::new().fg(Color::Yellow)
         } else {
-            Style::new().fg(Color::Cyan)
+            if fb.path().is_dir() {
+                Style::new().fg(Color::White)
+            } else {
+                Style::new().fg(Color::Cyan)
+            }
         };
-        let file_name = filelist::file_name(&fb);
+        let file_name = filelist::file_name(&fb.path());
         let file_line = Line::from(vec![Span::styled(file_name.to_string(), style)]);
         ListItem::new(vec![file_line])
     }

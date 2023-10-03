@@ -9,38 +9,71 @@ use crate::{
 };
 
 #[derive(Clone, PartialEq)]
-enum SelectedPanel {
+enum ActivePanel {
     Left,
     Right,
 }
 
 #[derive(Clone)]
+pub struct PanelItem {
+    path: PathBuf,
+    marked: bool,
+}
+
+impl PanelItem {
+    pub fn new(path: PathBuf) -> Self {
+        PanelItem {
+            path,
+            marked: false,
+        }
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+
+    pub fn marked(&self) -> &bool {
+        &self.marked
+    }
+
+    pub fn mark(&mut self) {
+        self.marked = !self.marked
+    }
+}
+
+#[derive(Clone)]
 pub struct Panel {
     path: PathBuf,
-    files: Vec<PathBuf>,
+    items: Vec<PanelItem>,
     index: usize,
 }
 
 impl Panel {
-    fn current_file(&self) -> &PathBuf {
-        self.files
-            .get(self.index)
+    fn current_item(&mut self) -> &mut PanelItem {
+        self.items
+            .get_mut(self.index)
             .expect("Index points on nonexistent file")
     }
 
     fn current_filename(&mut self) -> String {
         filelist::file_name(
-            self.files
+            &self
+                .items
                 .get(self.index)
-                .expect("Index points on nonexistent file"),
+                .expect("Index points on nonexistent file")
+                .path,
         )
     }
 
     fn read_files(&mut self) -> Result<(), ProgramError> {
-        self.files = read_file_list(&self.path)?;
-        self.files
-            .sort_by(|pb_a, pb_b| pb_a.display().to_string().cmp(&pb_b.display().to_string()));
-        self.files.sort_by_key(|pb| !pb.is_dir());
+        self.items = read_file_list(&self.path)?;
+        self.items.sort_by(|pb_a, pb_b| {
+            pb_a.path
+                .display()
+                .to_string()
+                .cmp(&pb_b.path.display().to_string())
+        });
+        self.items.sort_by_key(|pb| !pb.path.is_dir());
         self.index = 0;
         Ok(())
     }
@@ -51,20 +84,20 @@ pub struct AppContext {
     pub should_quit: bool,
     left_panel: Panel,
     right_panel: Panel,
-    active_panel: SelectedPanel,
+    active_panel: ActivePanel,
 }
 
 impl AppContext {
     pub fn new() -> Result<Self, ProgramError> {
         let mut left_panel = Panel {
             path: env::current_dir()?,
-            files: vec![],
+            items: vec![],
             index: 0,
         };
         left_panel.read_files()?;
         let mut right_panel = Panel {
             path: env::current_dir()?,
-            files: vec![],
+            items: vec![],
             index: 0,
         };
         right_panel.read_files()?;
@@ -73,19 +106,27 @@ impl AppContext {
             should_quit: false,
             left_panel,
             right_panel,
-            active_panel: SelectedPanel::Left,
+            active_panel: ActivePanel::Left,
         })
     }
 
     pub fn current_panel(&mut self) -> &mut Panel {
         match self.active_panel {
-            SelectedPanel::Left => &mut self.left_panel,
-            SelectedPanel::Right => &mut self.right_panel,
+            ActivePanel::Left => &mut self.left_panel,
+            ActivePanel::Right => &mut self.right_panel,
         }
     }
 
-    pub fn current_file(&mut self) -> &PathBuf {
-        &self.current_panel().current_file()
+    pub fn current_item_is_dir(&mut self) -> bool {
+        self.current_panel().current_item().path.is_dir()
+    }
+
+    pub fn current_item_full_path(&mut self) -> String {
+        self.current_panel()
+            .current_item()
+            .path()
+            .display()
+            .to_string()
     }
 
     pub fn apply_cmd(&mut self, cmd: AppCommand) -> Result<(), ProgramError> {
@@ -105,7 +146,7 @@ impl AppContext {
                     .expect("Failed to open file");
                 #[cfg(not(target_os = "windows"))]
                 Command::new("open")
-                    .arg(&self.current_file().display().to_string())
+                    .arg(&self.current_item_full_path())
                     .spawn()
                     .expect("Failed to open file");
             }
@@ -115,40 +156,47 @@ impl AppContext {
 
     pub fn tab(&mut self) {
         match self.active_panel {
-            SelectedPanel::Left => {
-                self.active_panel = SelectedPanel::Right;
+            ActivePanel::Left => {
+                self.active_panel = ActivePanel::Right;
             }
-            SelectedPanel::Right => {
-                self.active_panel = SelectedPanel::Left;
+            ActivePanel::Right => {
+                self.active_panel = ActivePanel::Left;
             }
         }
     }
 
-    pub fn key_up(&mut self, times: usize) {
+    pub fn key_up(&mut self, times: usize, with_select: bool) {
+        if with_select {
+            self.current_panel().current_item().mark();
+        }
         self.current_panel().index =
-            self.current_panel().index.saturating_sub(times) % self.current_panel().files.len();
+            self.current_panel().index.saturating_sub(times) % self.current_panel().items.len();
     }
 
-    pub fn key_down(&mut self, times: usize) {
-        let new_index = self.current_panel().index.saturating_add(times) % self.current_panel().files.len();
+    pub fn key_down(&mut self, times: usize, with_select: bool) {
+        if with_select {
+            self.current_panel().current_item().mark();
+        }
+        let new_index =
+            self.current_panel().index.saturating_add(times) % self.current_panel().items.len();
         if new_index > self.current_panel().index {
             self.current_panel().index = new_index;
         } else {
-            self.current_panel().index = self.current_panel().files.len() - 1;
+            self.current_panel().index = self.current_panel().items.len() - 1;
         }
     }
 
     pub fn right_selection_index(&self) -> Option<usize> {
         match self.active_panel {
-            SelectedPanel::Right => Some(self.right_panel.index),
-            SelectedPanel::Left => None,
+            ActivePanel::Right => Some(self.right_panel.index),
+            ActivePanel::Left => None,
         }
     }
 
     pub fn left_selection_index(&self) -> Option<usize> {
         match self.active_panel {
-            SelectedPanel::Left => Some(self.left_panel.index),
-            SelectedPanel::Right => None,
+            ActivePanel::Left => Some(self.left_panel.index),
+            ActivePanel::Right => None,
         }
     }
 
@@ -160,11 +208,11 @@ impl AppContext {
         self.left_panel.path.display().to_string()
     }
 
-    pub fn left_files(&self) -> Vec<PathBuf> {
-        self.left_panel.files.clone()
+    pub fn left_files(&self) -> Vec<PanelItem> {
+        self.left_panel.items.clone()
     }
 
-    pub fn right_files(&self) -> Vec<PathBuf> {
-        self.right_panel.files.clone()
+    pub fn right_files(&self) -> Vec<PanelItem> {
+        self.right_panel.items.clone()
     }
 }
