@@ -1,3 +1,4 @@
-pub enum Command {
+pub enum AppCommand {
     Cd,
+    Open,
 }

@@ -9,7 +9,12 @@ use std::{
     time::Duration,
 };
 
-use crate::{app_context::AppContext, errors::ProgramError, root::Root};
+use crate::{
+    app_context::AppContext,
+    commands::AppCommand::{Cd, Open},
+    errors::ProgramError,
+    root::Root,
+};
 
 pub struct App {
     context: AppContext,
@@ -54,7 +59,13 @@ impl App {
                 Event::Key(key) => {
                     match key.code {
                         KeyCode::Char('q') => self.context.should_quit = true,
-                        KeyCode::Enter => self.context.apply_cmd(crate::commands::Command::Cd)?,
+                        KeyCode::Enter => {
+                            if self.context.current_file().is_dir() {
+                                self.context.apply_cmd(Cd)?
+                            } else {
+                                self.context.apply_cmd(Open)?
+                            }
+                        }
                         KeyCode::Up => self.context.key_up(),
                         KeyCode::Down => self.context.key_down(),
                         KeyCode::Tab => self.context.tab(),

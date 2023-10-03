@@ -1,8 +1,9 @@
-use std::env;
+use std::env::{self, set_current_dir};
 use std::path::PathBuf;
+use std::process::Command;
 
 use crate::{
-    commands::Command,
+    commands::AppCommand,
     errors::ProgramError,
     filelist::{self, read_file_list},
 };
@@ -21,6 +22,12 @@ pub struct Panel {
 }
 
 impl Panel {
+    fn current_file(&self) -> &PathBuf {
+        self.files
+            .get(self.index)
+            .expect("Index points on nonexistent file")
+    }
+
     fn current_filename(&mut self) -> String {
         filelist::file_name(
             self.files
@@ -70,20 +77,37 @@ impl AppContext {
         })
     }
 
-    fn current_panel(&mut self) -> &mut Panel {
+    pub fn current_panel(&mut self) -> &mut Panel {
         match self.current_panel {
             SelectedPanel::Left => &mut self.left_panel,
             SelectedPanel::Right => &mut self.right_panel,
         }
     }
 
-    pub fn apply_cmd(&mut self, cmd: Command) -> Result<(), ProgramError> {
+    pub fn current_file(&mut self) -> &PathBuf {
+        &self.current_panel().current_file()
+    }
+
+    pub fn apply_cmd(&mut self, cmd: AppCommand) -> Result<(), ProgramError> {
         match cmd {
-            Command::Cd => {
+            AppCommand::Cd => {
                 let file = self.current_panel().current_filename();
                 self.current_panel().path.push(&file);
                 self.current_panel().path = self.current_panel().path.canonicalize()?;
+                set_current_dir(self.current_panel().path.display().to_string())?;
                 self.current_panel().read_files()?;
+            }
+            AppCommand::Open => {
+                #[cfg(target_os = "windows")]
+                Command::new("start")
+                    .arg(&self.current_file().display().to_string())
+                    .spawn()
+                    .expect("Failed to open file");
+                #[cfg(not(target_os = "windows"))]
+                Command::new("open")
+                    .arg(&self.current_file().display().to_string())
+                    .spawn()
+                    .expect("Failed to open file");
             }
         };
         Ok(())
