@@ -28,9 +28,9 @@ impl<'a> AppContext<'a> {
     }
 
     pub fn drop_editor(&mut self) {
-        if let Some(editor) = &mut self.editor {
-            drop(editor);
-            self.editor = None;
+        match self.editor {
+            Some(_) => { self.editor = None},
+            None => {}
         }
     }
 
