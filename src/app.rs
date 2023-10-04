@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event, KeyCode, KeyModifiers, KeyEventKind},
+    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -50,13 +50,13 @@ impl<'a> App<'a> {
 
     fn handle_events(&mut self) -> Result<(), ProgramError> {
         if event::poll(Duration::from_millis(250))? {
-            if self.context.editor_active {
+            if let Some(editor) = &mut self.context.editor {
                 match event::read()?.into() {
                     Input { key: Key::Esc, .. } => {
-                        self.context.editor_active = !self.context.editor_active
+                        self.context.drop_editor();
                     }
                     input => {
-                        self.context.textarea.input(input);
+                        editor.input(input);
                     }
                 }
             } else {
@@ -84,7 +84,9 @@ impl<'a> App<'a> {
                                 KeyCode::Right => self.context.key_down(20, false),
                                 KeyCode::Tab => self.context.tab(),
                                 KeyCode::F(4) => {
-                                    self.context.editor_active = !self.context.editor_active
+                                    if !self.context.current_item_is_dir() {
+                                        self.context.apply_cmd(Edit)?
+                                    }
                                 }
                                 _ => {}
                             }

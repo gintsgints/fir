@@ -3,8 +3,7 @@ pub mod panel_item_context;
 
 use std::process::Command;
 
-use tui_textarea::TextArea;
-
+use crate::editor::Editor;
 use crate::{commands::AppCommand, errors::ProgramError};
 
 use self::panel_context::PanelContext;
@@ -15,8 +14,7 @@ pub struct AppContext<'a> {
     pub should_quit: bool,
     left_context: PanelContext,
     right_context: PanelContext,
-    pub editor_active: bool,
-    pub textarea: TextArea<'a>,
+    pub editor: Option<Editor<'a>>,
 }
 
 impl<'a> AppContext<'a> {
@@ -25,9 +23,15 @@ impl<'a> AppContext<'a> {
             should_quit: false,
             left_context: PanelContext::new(true)?.to_owned(),
             right_context: PanelContext::new(false)?.to_owned(),
-            editor_active: false,
-            textarea: TextArea::default(),
+            editor: None,
         })
+    }
+
+    pub fn drop_editor(&mut self) {
+        if let Some(editor) = &mut self.editor {
+            drop(editor);
+            self.editor = None;
+        }
     }
 
     pub fn current_panel(&mut self) -> &mut PanelContext {
@@ -49,6 +53,9 @@ impl<'a> AppContext<'a> {
     pub fn apply_cmd(&mut self, cmd: AppCommand) -> Result<(), ProgramError> {
         match cmd {
             AppCommand::Cd => self.current_panel().cd()?,
+            AppCommand::Edit => {
+                self.editor = Some(Editor::new(self.current_panel().current_item_full_path())?)
+            }
             AppCommand::Open => {
                 #[cfg(target_os = "windows")]
                 Command::new("start")

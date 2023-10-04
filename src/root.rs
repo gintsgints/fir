@@ -17,8 +17,8 @@ impl<'a> Root<'a> {
 
 impl Widget for Root<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if self.context.editor_active {
-            self.context.textarea.widget().render(area, buf);
+        if let Some(editor) = &self.context.editor {
+            editor.textarea.widget().render(area, buf);
             return;
         }
         let main = Layout::default()

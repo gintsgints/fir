@@ -6,3 +6,4 @@ pub mod root;
 pub mod commands;
 mod help_line;
 mod panel;
+mod editor;
