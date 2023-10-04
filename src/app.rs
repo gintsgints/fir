@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event, KeyCode, KeyModifiers},
+    event::{self, Event, KeyCode, KeyModifiers, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -63,29 +63,31 @@ impl<'a> App<'a> {
                 let key_event = event::read()?;
                 match key_event {
                     Event::Key(key) => {
-                        match key.code {
-                            KeyCode::Char('q') => self.context.should_quit = true,
-                            KeyCode::Enter => {
-                                if self.context.current_item_is_dir() {
-                                    self.context.apply_cmd(Cd)?
-                                } else {
-                                    self.context.apply_cmd(Open)?
+                        if key.kind == KeyEventKind::Press {
+                            match key.code {
+                                KeyCode::Char('q') => self.context.should_quit = true,
+                                KeyCode::Enter => {
+                                    if self.context.current_item_is_dir() {
+                                        self.context.apply_cmd(Cd)?
+                                    } else {
+                                        self.context.apply_cmd(Open)?
+                                    }
                                 }
+                                KeyCode::Char(' ') => self.context.key_down(1, true),
+                                KeyCode::Up => self
+                                    .context
+                                    .key_up(1, key.modifiers.contains(KeyModifiers::SHIFT)),
+                                KeyCode::Down => self
+                                    .context
+                                    .key_down(1, key.modifiers.contains(KeyModifiers::SHIFT)),
+                                KeyCode::Left => self.context.key_up(20, false),
+                                KeyCode::Right => self.context.key_down(20, false),
+                                KeyCode::Tab => self.context.tab(),
+                                KeyCode::F(4) => {
+                                    self.context.editor_active = !self.context.editor_active
+                                }
+                                _ => {}
                             }
-                            KeyCode::Char(' ') => self.context.key_down(1, true),
-                            KeyCode::Up => self
-                                .context
-                                .key_up(1, key.modifiers.contains(KeyModifiers::SHIFT)),
-                            KeyCode::Down => self
-                                .context
-                                .key_down(1, key.modifiers.contains(KeyModifiers::SHIFT)),
-                            KeyCode::Left => self.context.key_up(20, false),
-                            KeyCode::Right => self.context.key_down(20, false),
-                            KeyCode::Tab => self.context.tab(),
-                            KeyCode::F(4) => {
-                                self.context.editor_active = !self.context.editor_active
-                            }
-                            _ => {}
                         }
                         return Ok(());
                     }
