@@ -4,6 +4,8 @@ pub mod panel_item_context;
 
 use std::process::Command;
 
+use tui_textarea::Input;
+
 use crate::{commands::AppCommand, errors::ProgramError};
 
 use self::editor_context::EditorContext;
@@ -15,7 +17,7 @@ pub struct AppContext<'a> {
     pub should_quit: bool,
     left_context: PanelContext,
     right_context: PanelContext,
-    pub editor: Option<EditorContext<'a>>,
+    editor_context: EditorContext<'a>,
 }
 
 impl<'a> AppContext<'a> {
@@ -24,12 +26,8 @@ impl<'a> AppContext<'a> {
             should_quit: false,
             left_context: PanelContext::new(true)?.to_owned(),
             right_context: PanelContext::new(false)?.to_owned(),
-            editor: None,
+            editor_context: EditorContext::new().to_owned(),
         })
-    }
-
-    pub fn drop_editor(&mut self) {
-        self.editor = None;
     }
 
     pub fn current_panel(&mut self) -> &mut PanelContext {
@@ -52,10 +50,9 @@ impl<'a> AppContext<'a> {
         match cmd {
             AppCommand::Cd => self.current_panel().cd()?,
             AppCommand::Edit => {
-                self.editor = Some(EditorContext::new(
-                    self.current_panel().current_item_full_path(),
-                )?)
-            }
+                let path = self.current_panel().current_item_full_path();
+                self.editor_context.open(path)?
+            },
             AppCommand::Open => {
                 #[cfg(target_os = "windows")]
                 Command::new("start")
@@ -89,6 +86,18 @@ impl<'a> AppContext<'a> {
             self.current_panel().mark_current_item();
         }
         self.current_panel().add_index(times);
+    }
+
+    pub fn close_editor(&mut self) {
+        self.editor_context.close();
+    }
+
+    pub fn editor_input(&mut self, input: impl Into<Input>) -> bool {
+        self.editor_context.input(input)
+    }
+
+    pub fn editor_context(&self) -> &EditorContext {
+        &self.editor_context
     }
 
     pub fn right_context(&self) -> &PanelContext {

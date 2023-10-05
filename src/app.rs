@@ -5,8 +5,8 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
-    io::{Stdout, stdout},
-    time::Duration
+    io::{stdout, Stdout},
+    time::Duration,
 };
 use tui_textarea::{Input, Key};
 
@@ -71,51 +71,51 @@ impl<'a> App<'a> {
 
     fn update(&mut self) -> Result<(), ProgramError> {
         if event::poll(Duration::from_millis(250))? {
-            if let Some(editor) = &mut self.context.editor {
+            if self.context.editor_context().is_open() {
                 match event::read()?.into() {
                     Input { key: Key::Esc, .. } => {
-                        self.context.drop_editor();
+                        self.context.close_editor();
                     }
                     input => {
-                        editor.input(input);
+                        self.context.editor_input(input);
                     }
                 }
-            } else {
-                let key_event = event::read()?;
-                match key_event {
-                    Event::Key(key) => {
-                        if key.kind == KeyEventKind::Press {
-                            match key.code {
-                                KeyCode::Char('q') => self.context.should_quit = true,
-                                KeyCode::Enter => {
-                                    if self.context.current_item_is_dir() {
-                                        self.context.apply_cmd(Cd)?
-                                    } else {
-                                        self.context.apply_cmd(Open)?
-                                    }
+                return Ok(());
+            }
+            let key_event = event::read()?;
+            match key_event {
+                Event::Key(key) => {
+                    if key.kind == KeyEventKind::Press {
+                        match key.code {
+                            KeyCode::Char('q') => self.context.should_quit = true,
+                            KeyCode::Enter => {
+                                if self.context.current_item_is_dir() {
+                                    self.context.apply_cmd(Cd)?
+                                } else {
+                                    self.context.apply_cmd(Open)?
                                 }
-                                KeyCode::Char(' ') => self.context.key_down(1, true),
-                                KeyCode::Up => self
-                                    .context
-                                    .key_up(1, key.modifiers.contains(KeyModifiers::SHIFT)),
-                                KeyCode::Down => self
-                                    .context
-                                    .key_down(1, key.modifiers.contains(KeyModifiers::SHIFT)),
-                                KeyCode::Left => self.context.key_up(20, false),
-                                KeyCode::Right => self.context.key_down(20, false),
-                                KeyCode::Tab => self.context.tab(),
-                                KeyCode::F(4) => {
-                                    if !self.context.current_item_is_dir() {
-                                        self.context.apply_cmd(Edit)?
-                                    }
-                                }
-                                _ => {}
                             }
+                            KeyCode::Char(' ') => self.context.key_down(1, true),
+                            KeyCode::Up => self
+                                .context
+                                .key_up(1, key.modifiers.contains(KeyModifiers::SHIFT)),
+                            KeyCode::Down => self
+                                .context
+                                .key_down(1, key.modifiers.contains(KeyModifiers::SHIFT)),
+                            KeyCode::Left => self.context.key_up(20, false),
+                            KeyCode::Right => self.context.key_down(20, false),
+                            KeyCode::Tab => self.context.tab(),
+                            KeyCode::F(4) => {
+                                if !self.context.current_item_is_dir() {
+                                    self.context.apply_cmd(Edit)?
+                                }
+                            }
+                            _ => {}
                         }
-                        return Ok(());
                     }
-                    _ => return Ok(()),
+                    return Ok(());
                 }
+                _ => return Ok(()),
             }
         };
         Ok(())
