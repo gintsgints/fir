@@ -12,6 +12,8 @@ use tui_textarea::{Input, Key};
 
 use crate::{app_context::AppContext, commands::AppCommand::*, errors::ProgramError, root::Root};
 
+pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
+
 pub struct App<'a> {
     context: AppContext<'a>,
 }
@@ -23,32 +25,51 @@ impl<'a> App<'a> {
     }
 
     pub fn run(&mut self) -> Result<(), ProgramError> {
-        let mut terminal = self.setup_terminal()?;
-        while !self.context.should_quit {
-            terminal.draw(|frame| frame.render_widget(Root::new(&self.context), frame.size()))?;
-            self.handle_events()?;
-        }
-        self.restore_terminal(&mut terminal)?;
+        self.startup()?;
+
+        let status = self.main_loop();
+        self.shutdown()?;
+        status?;
         Ok(())
     }
 
-    fn setup_terminal(&self) -> Result<Terminal<CrosstermBackend<Stdout>>, ProgramError> {
-        let mut stdout = stdout();
+    fn main_loop(&mut self) -> Result<(), ProgramError> {
+        let mut t = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
+        loop {
+            // application render
+            t.draw(|f| {
+                self.ui(f);
+            })?;
+
+            // application update
+            self.update()?;
+
+            // application exit
+            if self.context.should_quit {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn startup(&mut self) -> Result<(), ProgramError> {
         enable_raw_mode()?;
-        execute!(stdout, EnterAlternateScreen)?;
-        Ok(Terminal::new(CrosstermBackend::new(stdout))?)
+        execute!(std::io::stderr(), EnterAlternateScreen)?;
+        Ok(())
     }
 
-    fn restore_terminal(
-        &self,
-        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    ) -> Result<(), ProgramError> {
+    fn shutdown(&mut self) -> Result<(), ProgramError> {
+        execute!(std::io::stderr(), LeaveAlternateScreen)?;
         disable_raw_mode()?;
-        execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-        Ok(terminal.show_cursor()?)
+        Ok(())
     }
 
-    fn handle_events(&mut self) -> Result<(), ProgramError> {
+    fn ui(&mut self, f: &mut Frame<'_>) {
+        f.render_widget(Root::new(&self.context), f.size())
+    }
+
+    fn update(&mut self) -> Result<(), ProgramError> {
         if event::poll(Duration::from_millis(250))? {
             if let Some(editor) = &mut self.context.editor {
                 match event::read()?.into() {
