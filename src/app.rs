@@ -5,14 +5,14 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
-    io::{stdout, Stdout},
-    time::Duration,
+    io::{Stdout, stdout},
+    time::Duration
 };
 use tui_textarea::{Input, Key};
 
 use crate::{app_context::AppContext, commands::AppCommand::*, errors::ProgramError, root::Root};
 
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
+pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<Stdout>>;
 
 pub struct App<'a> {
     context: AppContext<'a>,
@@ -34,7 +34,7 @@ impl<'a> App<'a> {
     }
 
     fn main_loop(&mut self) -> Result<(), ProgramError> {
-        let mut t = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
+        let mut t = Terminal::new(CrosstermBackend::new(stdout()))?;
         loop {
             // application render
             t.draw(|f| {
@@ -55,12 +55,12 @@ impl<'a> App<'a> {
 
     fn startup(&mut self) -> Result<(), ProgramError> {
         enable_raw_mode()?;
-        execute!(std::io::stderr(), EnterAlternateScreen)?;
+        execute!(stdout(), EnterAlternateScreen)?;
         Ok(())
     }
 
     fn shutdown(&mut self) -> Result<(), ProgramError> {
-        execute!(std::io::stderr(), LeaveAlternateScreen)?;
+        execute!(stdout(), LeaveAlternateScreen)?;
         disable_raw_mode()?;
         Ok(())
     }
