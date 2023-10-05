@@ -1,11 +1,12 @@
+pub mod editor_context;
 pub mod panel_context;
 pub mod panel_item_context;
 
 use std::process::Command;
 
-use crate::editor::Editor;
 use crate::{commands::AppCommand, errors::ProgramError};
 
+use self::editor_context::EditorContext;
 use self::panel_context::PanelContext;
 use self::panel_item_context::PanelItemContext;
 
@@ -14,7 +15,7 @@ pub struct AppContext<'a> {
     pub should_quit: bool,
     left_context: PanelContext,
     right_context: PanelContext,
-    pub editor: Option<Editor<'a>>,
+    pub editor: Option<EditorContext<'a>>,
 }
 
 impl<'a> AppContext<'a> {
@@ -51,7 +52,9 @@ impl<'a> AppContext<'a> {
         match cmd {
             AppCommand::Cd => self.current_panel().cd()?,
             AppCommand::Edit => {
-                self.editor = Some(Editor::new(self.current_panel().current_item_full_path())?)
+                self.editor = Some(EditorContext::new(
+                    self.current_panel().current_item_full_path(),
+                )?)
             }
             AppCommand::Open => {
                 #[cfg(target_os = "windows")]

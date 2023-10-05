@@ -5,14 +5,14 @@ use std::path::PathBuf;
 use tui_textarea::{Input, TextArea};
 
 #[derive(Clone)]
-pub struct Editor<'a> {
+pub struct EditorContext<'a> {
     pub textarea: TextArea<'a>,
     path: String,
     modified: bool,
     active: bool,
 }
 
-impl<'a> Editor<'a> {
+impl<'a> EditorContext<'a> {
     pub fn new(path: String) -> Result<Self> {
         let mut textarea: TextArea = BufReader::new(File::open(&path)?)
             .lines()
