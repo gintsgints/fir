@@ -4,8 +4,6 @@ pub mod panel_item_context;
 
 use std::process::Command;
 
-use tui_textarea::Input;
-
 use crate::{commands::AppCommand, errors::ProgramError};
 
 use self::editor_context::EditorContext;

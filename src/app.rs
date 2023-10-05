@@ -8,7 +8,6 @@ use std::{
     io::{stdout, Stdout},
     time::Duration,
 };
-use tui_textarea::{Input, Key};
 
 use crate::{app_context::AppContext, commands::AppCommand::*, errors::ProgramError, root::Root};
 
