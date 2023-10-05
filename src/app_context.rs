@@ -52,7 +52,7 @@ impl<'a> AppContext<'a> {
             AppCommand::Edit => {
                 let path = self.current_panel().current_item_full_path();
                 self.editor_context.open(path)?
-            },
+            }
             AppCommand::Open => {
                 #[cfg(target_os = "windows")]
                 Command::new("start")
@@ -92,8 +92,9 @@ impl<'a> AppContext<'a> {
         self.editor_context.close();
     }
 
-    pub fn editor_input(&mut self, input: impl Into<Input>) -> bool {
-        self.editor_context.input(input)
+    pub fn editor_update(&mut self) -> Result<(), ProgramError> {
+        self.editor_context.update()?;
+        Ok(())
     }
 
     pub fn editor_context(&self) -> &EditorContext {

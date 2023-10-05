@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Result, Write};
 
+use crossterm::event;
 use ratatui::prelude::Alignment;
-use ratatui::style::{Style, Color};
-use ratatui::widgets::{Block, BorderType, Borders};
+use ratatui::style::{Color, Style};
 use ratatui::widgets::block::Title;
-use tui_textarea::{Input, TextArea};
+use ratatui::widgets::{Block, BorderType, Borders};
+use tui_textarea::{Input, Key, TextArea};
 
 #[derive(Clone, Default)]
 pub struct EditorContext<'a> {
@@ -24,7 +25,8 @@ impl<'a> EditorContext<'a> {
     }
 
     pub fn open(&mut self, path: String) -> Result<()> {
-        let mut textarea: TextArea = BufReader::new(File::open(&path)?)
+        self.path = path;
+        let mut textarea: TextArea = BufReader::new(File::open(&self.path)?)
             .lines()
             .collect::<Result<_>>()?;
         if textarea.lines().iter().any(|l| l.starts_with('\t')) {
@@ -58,6 +60,28 @@ impl<'a> EditorContext<'a> {
             }
         }
         self.modified = false;
+        Ok(())
+    }
+
+    pub fn update(&mut self) -> Result<()> {
+        if let Some(textarea) = &mut self.textarea {
+            match event::read()?.into() {
+                Input { key: Key::Esc, .. } => {
+                    self.close();
+                }
+                Input {
+                    key: Key::Char('s'),
+                    ctrl: true,
+                    ..
+                } => {
+                    self.save()?;
+                }
+                input => {
+                    self.modified = textarea.input(input);
+                    return Ok(());
+                }
+            }
+        }
         Ok(())
     }
 

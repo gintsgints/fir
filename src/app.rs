@@ -72,14 +72,7 @@ impl<'a> App<'a> {
     fn update(&mut self) -> Result<(), ProgramError> {
         if event::poll(Duration::from_millis(250))? {
             if self.context.editor_context().is_open() {
-                match event::read()?.into() {
-                    Input { key: Key::Esc, .. } => {
-                        self.context.close_editor();
-                    }
-                    input => {
-                        self.context.editor_input(input);
-                    }
-                }
+                self.context.editor_update()?;
                 return Ok(());
             }
             let key_event = event::read()?;
