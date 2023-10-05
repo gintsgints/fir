@@ -28,10 +28,7 @@ impl<'a> AppContext<'a> {
     }
 
     pub fn drop_editor(&mut self) {
-        match self.editor {
-            Some(_) => { self.editor = None},
-            None => {}
-        }
+        self.editor = None;
     }
 
     pub fn current_panel(&mut self) -> &mut PanelContext {
