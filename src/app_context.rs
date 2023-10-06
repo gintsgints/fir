@@ -53,8 +53,8 @@ impl<'a> AppContext<'a> {
             }
             AppCommand::Open => {
                 #[cfg(target_os = "windows")]
-                Command::new("start")
-                    .arg(&self.current_item_full_path())
+                Command::new("cmd")
+                    .args(["/C", "start ", &self.current_item_full_path()])
                     .spawn()
                     .expect("Failed to open file");
                 #[cfg(not(target_os = "windows"))]
