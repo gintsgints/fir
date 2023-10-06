@@ -60,7 +60,7 @@ impl Widget for Panel<'_> {
                     .borders(Borders::all())
                     .style(Style::new().bg(Color::Blue)),
             )
-            .highlight_style(Style::new().bg(Color::Cyan));
+            .highlight_style(Style::new().bg(Color::Cyan).fg(Color::Black));
         let mut state = ListState::default().with_selected(if self.context.active {
             Some(self.context.index())
         } else {
