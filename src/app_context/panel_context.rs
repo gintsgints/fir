@@ -7,7 +7,7 @@ use crate::{
 
 use super::panel_item_context::PanelItemContext;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct PanelContext {
     pub active: bool,
     path: PathBuf,

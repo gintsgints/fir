@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -75,6 +75,16 @@ impl<'a> App<'a> {
                 return Ok(());
             }
             let key_event = event::read()?;
+
+            self.context.shift = false;
+            match key_event {
+                Event::Key(KeyEvent {
+                    modifiers: KeyModifiers::SHIFT,
+                    ..
+                }) => { self.context.shift = true }
+                _ => {}
+            };
+            
             match key_event {
                 Event::Key(key) => {
                     if key.kind == KeyEventKind::Press {
@@ -102,6 +112,7 @@ impl<'a> App<'a> {
                                     self.context.apply_cmd(Edit)?
                                 }
                             }
+                            KeyCode::F(10) => self.context.should_quit = true,
                             _ => {}
                         }
                     }

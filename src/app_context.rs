@@ -10,9 +10,11 @@ use self::editor_context::EditorContext;
 use self::panel_context::PanelContext;
 use self::panel_item_context::PanelItemContext;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct AppContext<'a> {
     pub should_quit: bool,
+    pub shift: bool,
+    pub ctrl: bool,
     left_context: PanelContext,
     right_context: PanelContext,
     editor_context: EditorContext<'a>,
@@ -21,10 +23,10 @@ pub struct AppContext<'a> {
 impl<'a> AppContext<'a> {
     pub fn new() -> Result<Self, ProgramError> {
         Ok(AppContext {
-            should_quit: false,
             left_context: PanelContext::new(true)?.to_owned(),
             right_context: PanelContext::new(false)?.to_owned(),
             editor_context: EditorContext::new().to_owned(),
+            ..Default::default()
         })
     }
 

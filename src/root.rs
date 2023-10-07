@@ -35,6 +35,6 @@ impl Widget for Root<'_> {
         l_panel.render(panels[0], buf);
         let r_panel = Panel::new(self.context.right_context());
         r_panel.render(panels[1], buf);
-        HelpLine::new().render(main[1], buf);
+        HelpLine::new(&self.context).render(main[1], buf);
     }
 }
