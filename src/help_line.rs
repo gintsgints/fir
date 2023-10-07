@@ -15,10 +15,12 @@ impl<'a> HelpLine<'a> {
 
 impl Widget for HelpLine<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let message = if self.context.shift {
+        let message = if self.context.editor_context().is_open() {
             Line::from(vec![
-                Span::raw(" ←→↑↓"),
-                Span::styled("Mark", Style::default().bg(Color::Blue)),
+                Span::raw("ESC "),
+                Span::styled("Quit", Style::default().bg(Color::Blue)),
+                Span::raw(" ^s"),
+                Span::styled("Save", Style::default().bg(Color::Blue)),
             ])
         } else {
             Line::from(vec![

@@ -13,8 +13,6 @@ use self::panel_item_context::PanelItemContext;
 #[derive(Clone, Default)]
 pub struct AppContext<'a> {
     pub should_quit: bool,
-    pub shift: bool,
-    pub ctrl: bool,
     left_context: PanelContext,
     right_context: PanelContext,
     editor_context: EditorContext<'a>,
