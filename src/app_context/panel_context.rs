@@ -1,9 +1,7 @@
 use std::{env::{set_current_dir, self}, path::PathBuf};
+use anyhow::Result;
 
-use crate::{
-    errors::ProgramError,
-    filelist::{self, read_file_list},
-};
+use crate::filelist::{self, read_file_list};
 
 use super::panel_item_context::PanelItemContext;
 
@@ -16,7 +14,7 @@ pub struct PanelContext {
 }
 
 impl PanelContext {
-    pub fn new(active: bool) -> Result<Self, ProgramError> {
+    pub fn new(active: bool) -> Result<Self> {
         let path = env::current_dir()?;
         let mut result = PanelContext {
             active,
@@ -50,7 +48,7 @@ impl PanelContext {
         self.current_item().full_path()
     }
 
-    pub fn cd(&mut self) -> Result<(), ProgramError> {
+    pub fn cd(&mut self) -> Result<()> {
         let file = self.current_filename();
         self.path.push(&file);
         self.path = self.path.canonicalize()?;
@@ -90,7 +88,7 @@ impl PanelContext {
         )
     }
 
-    fn read_files(&mut self) -> Result<&mut Self, ProgramError> {
+    fn read_files(&mut self) -> Result<&mut Self> {
         self.items = read_file_list(&self.path)?;
         self.items
             .sort_by(|pb_a, pb_b| pb_a.display_string().cmp(&pb_b.display_string()));
