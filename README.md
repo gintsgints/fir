@@ -1,3 +1,5 @@
-# File manager in RUST
+# ratatui-hello-world
 
-Another file manager which is built in rust influenced by FAR
+[![CI](https://github.com//ratatui-hello-world/workflows/CI/badge.svg)](https://github.com//ratatui-hello-world/actions)
+
+Try FAR manager in rust and ratatui

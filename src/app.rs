@@ -1,117 +1,166 @@
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use std::{ops::Deref, rc::Rc};
+
+use color_eyre::eyre::Result;
+use crossterm::event::KeyEvent;
+use ratatui::prelude::*;
+use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc::{self, UnboundedSender};
+
+use crate::{
+  action::Action,
+  components::{help::Help, panel::Panel, prompt::Prompt, Component},
+  config::Config,
+  mode::Mode,
+  tui::{self, Tui},
 };
-use ratatui::{backend::CrosstermBackend, Terminal};
-use std::{
-    io::{stdout, Stdout},
-    time::Duration,
-};
-use anyhow::Result;
 
-use crate::{app_context::AppContext, commands::AppCommand::*, root::Root};
-
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<Stdout>>;
-
-pub struct App<'a> {
-    context: AppContext<'a>,
+pub struct App {
+  pub config: Config,
+  pub tick_rate: f64,
+  pub frame_rate: f64,
+  pub components: Vec<Box<dyn Component>>,
+  pub should_quit: bool,
+  pub should_suspend: bool,
+  pub mode: Mode,
+  pub last_tick_key_events: Vec<KeyEvent>,
 }
 
-impl<'a> App<'a> {
-    pub fn new() -> Result<Self> {
-        let context = AppContext::new()?;
-        Ok(App { context })
+impl App {
+  pub fn new(tick_rate: f64, frame_rate: f64) -> Result<Self> {
+    let panel_l = Panel::new();
+    let panel_r = Panel::new();
+    let prompt = Prompt::new();
+    let help = Help::new();
+    let config = Config::new()?;
+    let mode = Mode::Home;
+    Ok(Self {
+      tick_rate,
+      frame_rate,
+      components: vec![Box::new(panel_l), Box::new(panel_r), Box::new(prompt), Box::new(help)],
+      should_quit: false,
+      should_suspend: false,
+      config,
+      mode,
+      last_tick_key_events: Vec::new(),
+    })
+  }
+
+  pub async fn run(&mut self) -> Result<()> {
+    let (action_tx, mut action_rx) = mpsc::unbounded_channel();
+
+    let mut tui = tui::Tui::new()?.tick_rate(self.tick_rate).frame_rate(self.frame_rate);
+    // tui.mouse(true);
+    tui.enter()?;
+
+    for component in self.components.iter_mut() {
+      component.register_action_handler(action_tx.clone())?;
     }
 
-    pub fn run(&mut self) -> Result<()> {
-        self.startup()?;
-
-        let status = self.main_loop();
-        self.shutdown()?;
-        status?;
-        Ok(())
+    for component in self.components.iter_mut() {
+      component.register_config_handler(self.config.clone())?;
     }
 
-    fn main_loop(&mut self) -> Result<()> {
-        let mut t = Terminal::new(CrosstermBackend::new(stdout()))?;
-        loop {
-            // application render
-            t.draw(|f| {
-                self.ui(f);
-            })?;
-
-            // application update
-            self.update()?;
-
-            // application exit
-            if self.context.should_quit {
-                break;
-            }
-        }
-
-        Ok(())
+    for component in self.components.iter_mut() {
+      component.init(tui.size()?)?;
     }
 
-    fn startup(&mut self) -> Result<()> {
-        enable_raw_mode()?;
-        execute!(stdout(), EnterAlternateScreen)?;
-        Ok(())
-    }
+    loop {
+      if let Some(e) = tui.next().await {
+        match e {
+          tui::Event::Quit => action_tx.send(Action::Quit)?,
+          tui::Event::Tick => action_tx.send(Action::Tick)?,
+          tui::Event::Render => action_tx.send(Action::Render)?,
+          tui::Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
+          tui::Event::Key(key) => {
+            if let Some(keymap) = self.config.keybindings.get(&self.mode) {
+              if let Some(action) = keymap.get(&vec![key]) {
+                log::info!("Got action: {action:?}");
+                action_tx.send(action.clone())?;
+              } else {
+                // If the key was not handled as a single key action,
+                // then consider it for multi-key combinations.
+                self.last_tick_key_events.push(key);
 
-    fn shutdown(&mut self) -> Result<()> {
-        execute!(stdout(), LeaveAlternateScreen)?;
-        disable_raw_mode()?;
-        Ok(())
-    }
-
-    fn ui(&mut self, f: &mut Frame<'_>) {
-        f.render_widget(Root::new(&self.context), f.size())
-    }
-
-    fn update(&mut self) -> Result<()> {
-        if event::poll(Duration::from_millis(250))? {
-            if self.context.editor_context().is_open() {
-                self.context.editor_update()?;
-                return Ok(());
-            }
-            let key_event = event::read()?;
-            match key_event {
-                Event::Key(key) => {
-                    if key.kind == KeyEventKind::Press {
-                        match key.code {
-                            KeyCode::Char('q') => self.context.should_quit = true,
-                            KeyCode::Enter => {
-                                if self.context.current_item_is_dir() {
-                                    self.context.apply_cmd(Cd)?
-                                } else {
-                                    self.context.apply_cmd(Open)?
-                                }
-                            }
-                            KeyCode::Char(' ') => self.context.key_down(1, true),
-                            KeyCode::Up => self
-                                .context
-                                .key_up(1, key.modifiers.contains(KeyModifiers::SHIFT)),
-                            KeyCode::Down => self
-                                .context
-                                .key_down(1, key.modifiers.contains(KeyModifiers::SHIFT)),
-                            KeyCode::Left => self.context.key_up(20, false),
-                            KeyCode::Right => self.context.key_down(20, false),
-                            KeyCode::Tab => self.context.tab(),
-                            KeyCode::F(4) => {
-                                if !self.context.current_item_is_dir() {
-                                    self.context.apply_cmd(Edit)?
-                                }
-                            }
-                            KeyCode::F(10) => self.context.should_quit = true,
-                            _ => {}
-                        }
-                    }
-                    return Ok(());
+                // Check for multi-key combinations
+                if let Some(action) = keymap.get(&self.last_tick_key_events) {
+                  log::info!("Got action: {action:?}");
+                  action_tx.send(action.clone())?;
                 }
-                _ => return Ok(()),
-            }
-        };
-        Ok(())
+              }
+            };
+          },
+          _ => {},
+        }
+        for component in self.components.iter_mut() {
+          if let Some(action) = component.handle_events(Some(e.clone()))? {
+            action_tx.send(action)?;
+          }
+        }
+      }
+
+      while let Ok(action) = action_rx.try_recv() {
+        if action != Action::Tick && action != Action::Render {
+          log::debug!("{action:?}");
+        }
+        match action {
+          Action::Tick => {
+            self.last_tick_key_events.drain(..);
+          },
+          Action::Quit => self.should_quit = true,
+          Action::Suspend => self.should_suspend = true,
+          Action::Resume => self.should_suspend = false,
+          Action::Resize(w, h) => {
+            tui.resize(Rect::new(0, 0, w, h))?;
+            self.draw(&mut tui, &action_tx)?;
+          },
+          Action::Render => {
+            self.draw(&mut tui, &action_tx)?;
+          },
+          _ => {},
+        }
+        for component in self.components.iter_mut() {
+          if let Some(action) = component.update(action.clone())? {
+            action_tx.send(action)?
+          };
+        }
+      }
+      if self.should_suspend {
+        tui.suspend()?;
+        action_tx.send(Action::Resume)?;
+        tui = tui::Tui::new()?.tick_rate(self.tick_rate).frame_rate(self.frame_rate);
+        // tui.mouse(true);
+        tui.enter()?;
+      } else if self.should_quit {
+        tui.stop()?;
+        break;
+      }
     }
+    tui.exit()?;
+    Ok(())
+  }
+
+  fn draw(&mut self, tui: &mut Tui, action_tx: &UnboundedSender<Action>) -> Result<()> {
+    tui.draw(|f| {
+      let mut areas: Vec<Rect> = vec![];
+      let main = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(1), Constraint::Length(1)])
+        .split(f.size());
+      let panels = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(main[0]);
+      areas.push(panels[0]);
+      areas.push(panels[1]);
+      areas.push(main[1]);
+      areas.push(main[2]);
+      for (index, component) in self.components.iter_mut().enumerate() {
+        let r = component.draw(f, *areas.get(index).unwrap());
+        if let Err(e) = r {
+          action_tx.send(Action::Error(format!("Failed to draw: {:?}", e))).unwrap();
+        }
+      }
+    })?;
+    Ok(())
+  }
 }

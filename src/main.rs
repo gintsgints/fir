@@ -1,15 +1,43 @@
-use cli_log::{info, init_cli_log, log_mem, Level};
-use fir::app::App;
-use anyhow::Result;
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
-fn main() -> Result<()> {
-    init_cli_log!();
+pub mod action;
+pub mod app;
+pub mod cli;
+pub mod components;
+pub mod config;
+pub mod mode;
+pub mod tui;
+pub mod utils;
 
-    let mut application = App::new()?;
+use clap::Parser;
+use cli::Cli;
+use color_eyre::eyre::Result;
 
-    application.run()?;
+use crate::{
+  app::App,
+  utils::{initialize_logging, initialize_panic_handler, version},
+};
 
-    log_mem(Level::Info);
-    info!("bye");
+async fn tokio_main() -> Result<()> {
+  initialize_logging()?;
+
+  initialize_panic_handler()?;
+
+  let args = Cli::parse();
+  let mut app = App::new(args.tick_rate, args.frame_rate)?;
+  app.run().await?;
+
+  Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+  if let Err(e) = tokio_main().await {
+    eprintln!("{} error: Something went wrong", env!("CARGO_PKG_NAME"));
+    Err(e)
+  } else {
     Ok(())
+  }
 }
