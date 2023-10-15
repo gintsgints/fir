@@ -7,6 +7,9 @@ use serde::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Action {
+  Edit,
+  Save,
+  Exit,
   Tick,
   Render,
   Resize(u16, u16),
@@ -37,6 +40,9 @@ impl<'de> Deserialize<'de> for Action {
         E: de::Error,
       {
         match value {
+          "Edit" => Ok(Action::Edit),
+          "Save" => Ok(Action::Save),
+          "Exit" => Ok(Action::Exit),
           "Tick" => Ok(Action::Tick),
           "Render" => Ok(Action::Render),
           "Suspend" => Ok(Action::Suspend),

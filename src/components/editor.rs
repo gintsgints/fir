@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, time::Duration, path::PathBuf};
 
 use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyEvent};
@@ -13,18 +13,19 @@ use crate::{
 };
 
 #[derive(Default)]
-pub struct Prompt {
+pub struct Editor {
   command_tx: Option<UnboundedSender<Action>>,
   config: Config,
+  files: Vec<PathBuf>,
 }
 
-impl Prompt {
+impl Editor {
   pub fn new() -> Self {
     Self::default()
   }
 }
 
-impl Component for Prompt {
+impl Component for Editor {
   fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
     self.command_tx = Some(tx);
     Ok(())
@@ -44,7 +45,7 @@ impl Component for Prompt {
   }
 
   fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-    f.render_widget(Paragraph::new(">"), area);
+    f.render_widget(Paragraph::new("Editor"), area);
     Ok(())
   }
 }

@@ -1,10 +1,15 @@
 {
   "keybindings": {
-    "Home": {
+    "Panels": {
       "<q>": "Quit", // Quit the application
+      "<e>": "Edit", // Open current file in editor
       "<Ctrl-d>": "Quit", // Another way to quit
       "<Ctrl-c>": "Quit", // Yet another way to quit
       "<Ctrl-z>": "Suspend" // Suspend the application
     },
+    "Edit": {
+      "<esc>": "Exit", // Exit from editor
+      "<Ctrl-s>": "Save", // Save text 
+    }
   }
 }

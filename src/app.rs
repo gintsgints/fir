@@ -8,7 +8,7 @@ use tokio::sync::mpsc::{self, UnboundedSender};
 
 use crate::{
   action::Action,
-  components::{help::Help, panel::Panel, prompt::Prompt, Component},
+  components::{help::Help, panel::Panel, Component, editor::{self, Editor}},
   config::Config,
   mode::Mode,
   tui::{self, Tui},
@@ -29,14 +29,14 @@ impl App {
   pub fn new(tick_rate: f64, frame_rate: f64) -> Result<Self> {
     let panel_l = Panel::new();
     let panel_r = Panel::new();
-    let prompt = Prompt::new();
+    let editor = Editor::new();
     let help = Help::new();
     let config = Config::new()?;
-    let mode = Mode::Home;
+    let mode = Mode::Panels;
     Ok(Self {
       tick_rate,
       frame_rate,
-      components: vec![Box::new(panel_l), Box::new(panel_r), Box::new(prompt), Box::new(help)],
+      components: vec![Box::new(panel_l), Box::new(panel_r), Box::new(editor), Box::new(help)],
       should_quit: false,
       should_suspend: false,
       config,
@@ -106,6 +106,8 @@ impl App {
           Action::Tick => {
             self.last_tick_key_events.drain(..);
           },
+          Action::Edit => self.mode = Mode::Edit,
+          Action::Exit => self.mode = Mode::Panels,
           Action::Quit => self.should_quit = true,
           Action::Suspend => self.should_suspend = true,
           Action::Resume => self.should_suspend = false,
@@ -144,16 +146,22 @@ impl App {
       let mut areas: Vec<Rect> = vec![];
       let main = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Length(1), Constraint::Length(1)])
+        .constraints([Constraint::Min(0), Constraint::Length(1)])
         .split(f.size());
-      let panels = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(main[0]);
-      areas.push(panels[0]);
-      areas.push(panels[1]);
+      if self.mode == Mode::Panels {
+        let panels = Layout::default()
+          .direction(Direction::Horizontal)
+          .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+          .split(main[0]);
+        areas.push(panels[0]);
+        areas.push(panels[1]);
+        areas.push(Rect::new(0, 0, 0, 0));
+      } else {
+        areas.push(Rect::new(0, 0, 0, 0));
+        areas.push(Rect::new(0, 0, 0, 0));
+        areas.push(main[0]);
+      }
       areas.push(main[1]);
-      areas.push(main[2]);
       for (index, component) in self.components.iter_mut().enumerate() {
         let r = component.draw(f, *areas.get(index).unwrap());
         if let Err(e) = r {

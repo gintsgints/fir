@@ -11,7 +11,7 @@ use crate::{
 
 pub mod help;
 pub mod panel;
-pub mod prompt;
+pub mod editor;
 
 pub trait Component {
   #[allow(unused_variables)]
