@@ -8,8 +8,9 @@ use std::{
     io::{stdout, Stdout},
     time::Duration,
 };
+use anyhow::Result;
 
-use crate::{app_context::AppContext, commands::AppCommand::*, errors::ProgramError, root::Root};
+use crate::{app_context::AppContext, commands::AppCommand::*, root::Root};
 
 pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<Stdout>>;
 
@@ -18,12 +19,12 @@ pub struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    pub fn new() -> Result<Self, ProgramError> {
+    pub fn new() -> Result<Self> {
         let context = AppContext::new()?;
         Ok(App { context })
     }
 
-    pub fn run(&mut self) -> Result<(), ProgramError> {
+    pub fn run(&mut self) -> Result<()> {
         self.startup()?;
 
         let status = self.main_loop();
@@ -32,7 +33,7 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    fn main_loop(&mut self) -> Result<(), ProgramError> {
+    fn main_loop(&mut self) -> Result<()> {
         let mut t = Terminal::new(CrosstermBackend::new(stdout()))?;
         loop {
             // application render
@@ -52,13 +53,13 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    fn startup(&mut self) -> Result<(), ProgramError> {
+    fn startup(&mut self) -> Result<()> {
         enable_raw_mode()?;
         execute!(stdout(), EnterAlternateScreen)?;
         Ok(())
     }
 
-    fn shutdown(&mut self) -> Result<(), ProgramError> {
+    fn shutdown(&mut self) -> Result<()> {
         execute!(stdout(), LeaveAlternateScreen)?;
         disable_raw_mode()?;
         Ok(())
@@ -68,7 +69,7 @@ impl<'a> App<'a> {
         f.render_widget(Root::new(&self.context), f.size())
     }
 
-    fn update(&mut self) -> Result<(), ProgramError> {
+    fn update(&mut self) -> Result<()> {
         if event::poll(Duration::from_millis(250))? {
             if self.context.editor_context().is_open() {
                 self.context.editor_update()?;

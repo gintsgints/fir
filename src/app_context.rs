@@ -4,7 +4,8 @@ pub mod panel_item_context;
 
 use std::process::Command;
 
-use crate::{commands::AppCommand, errors::ProgramError};
+use crate::commands::AppCommand;
+use anyhow::Result;
 
 use self::editor_context::EditorContext;
 use self::panel_context::PanelContext;
@@ -19,7 +20,7 @@ pub struct AppContext<'a> {
 }
 
 impl<'a> AppContext<'a> {
-    pub fn new() -> Result<Self, ProgramError> {
+    pub fn new() -> Result<Self> {
         Ok(AppContext {
             left_context: PanelContext::new(true)?.to_owned(),
             right_context: PanelContext::new(false)?.to_owned(),
@@ -44,7 +45,7 @@ impl<'a> AppContext<'a> {
         self.current_panel().current_item_full_path()
     }
 
-    pub fn apply_cmd(&mut self, cmd: AppCommand) -> Result<(), ProgramError> {
+    pub fn apply_cmd(&mut self, cmd: AppCommand) -> Result<()> {
         match cmd {
             AppCommand::Cd => self.current_panel().cd()?,
             AppCommand::Edit => {
@@ -90,7 +91,7 @@ impl<'a> AppContext<'a> {
         self.editor_context.close();
     }
 
-    pub fn editor_update(&mut self) -> Result<(), ProgramError> {
+    pub fn editor_update(&mut self) -> Result<()> {
         self.editor_context.update()?;
         Ok(())
     }
