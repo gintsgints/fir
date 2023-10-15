@@ -17,10 +17,18 @@ const CONFIG: &str = include_str!("../.config/config.json5");
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct AppConfig {
+  #[serde(default = "default_path")]
+  left_dir: String,
+  #[serde(default)]
+  right_dir: String,
   #[serde(default)]
   pub _data_dir: PathBuf,
   #[serde(default)]
   pub _config_dir: PathBuf,
+}
+
+fn default_path() -> String {
+  ".".to_string()
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

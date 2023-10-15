@@ -1,4 +1,7 @@
 {
+  "config": {
+    "right_dir": "/"
+  },
   "keybindings": {
     "Panels": {
       "<q>": "Quit", // Quit the application
