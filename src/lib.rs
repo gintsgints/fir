@@ -1,8 +1,9 @@
-pub mod app_context;
 pub mod app;
-pub mod filelist;
-pub mod root;
+pub mod app_context;
 pub mod commands;
+mod editor;
+pub mod event;
+pub mod filelist;
 mod help_line;
 mod panel;
-mod editor;
+pub mod root;

@@ -2,7 +2,8 @@ use cli_log::{info, init_cli_log, log_mem, Level};
 use fir::app::App;
 use anyhow::Result;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     init_cli_log!();
 
     let mut application = App::new()?;
