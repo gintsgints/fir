@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 cli-log = "2.0.0"
 custom_error = "1.9.2"
-ratatui = { version = "0.23" }
+ratatui = { version = "0.26.2" }
 crossterm = "0.27.0"
-tui-textarea = { version = "*", features = ["ratatui-crossterm"], default-features = false }
+tui-textarea = { git = "https://github.com/gintsgints/tui-textarea.git" }
 anyhow = "1.0.75"

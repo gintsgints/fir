@@ -5,14 +5,14 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
-    io::{stdout, Stdout},
+    io::stdout,
     time::Duration,
 };
 use anyhow::Result;
 
 use crate::{app_context::AppContext, commands::AppCommand::*, root::Root};
 
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<Stdout>>;
+pub type Frame<'a> = ratatui::Frame<'a>;
 
 pub struct App<'a> {
     context: AppContext<'a>,
