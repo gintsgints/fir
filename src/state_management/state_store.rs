@@ -181,6 +181,6 @@ mod test {
             .output()
             .expect("failed to execute process");
         let msg = state_store.get_error_msg(&output).unwrap();
-        assert_eq!(msg, "cat: file.txt: No such file or directory\n");
+        assert_eq!(msg, "/bin/cat: file.txt: No such file or directory\n");
     }
 }
