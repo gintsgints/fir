@@ -4,7 +4,7 @@ use std::{
 };
 
 use crossterm::event::{KeyCode, KeyModifiers};
-use ratatui::layout::Rect;
+use ratatui::{layout::Rect, style::{Color, Style}};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_textarea::TextArea;
 
@@ -66,6 +66,7 @@ impl<'a> Component for EditorPage<'a> {
                     .lines()
                     .collect::<Result<_, _>>()
                     .expect("Error?");
+            text_area.set_style(Style::default().bg(Color::Blue).fg(Color::White));
             if text_area.lines().iter().any(|l| l.starts_with('\t')) {
                 text_area.set_hard_tab_indent(true);
             };
