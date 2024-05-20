@@ -125,6 +125,11 @@ impl<'a> Component for MainPage<'a> {
                     let copy_to = self.opposite_path();
                     let _ = self.action_tx.send(Action::Copy(copy_from, copy_to));
                 }
+                KeyCode::F(6) => {
+                    let copy_from = self.current_item().file_full_path();
+                    let copy_to = self.opposite_path();
+                    let _ = self.action_tx.send(Action::Move(copy_from, copy_to));
+                }
                 KeyCode::F(7) => {
                     let _ = self.action_tx.send(Action::MkDirInput);
                 }

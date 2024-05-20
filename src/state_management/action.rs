@@ -13,6 +13,7 @@ pub enum Action {
     Cd(String),
     Open(String),
     Copy(String, String),
+    Move(String, String),
     SetInput(String),
     RmYesNo(String),
     MkDirInput,

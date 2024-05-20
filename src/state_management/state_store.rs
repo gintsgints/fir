@@ -65,6 +65,26 @@ impl<'a> StateStore {
                     Action::Cd(dir) => {
                         state.cd(dir);
                     },
+                    Action::Move(from, to) => {
+                        #[cfg(target_os = "windows")]
+                        let output = Command::new("move")
+                            .arg(from)
+                            .arg(to)
+                            .output()
+                            .expect("Filed to copy file");
+                        #[cfg(not(target_os = "windows"))]
+                        let output = Command::new("mv")
+                            .arg(from)
+                            .arg(to)
+                            .output()
+                            .expect("Filed to copy file");
+                        if !output.status.success() {
+                            state.popup_msg = self.get_error_msg(&output)?;
+                            state.popup_type = PopupType::Error;
+                        }
+                        state.reload(PanelPosition::L);
+                        state.reload(PanelPosition::R);
+                    },
                     Action::Copy(from, to) => {
                         #[cfg(target_os = "windows")]
                         let output = Command::new("copy")
