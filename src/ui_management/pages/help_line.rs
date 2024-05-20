@@ -76,6 +76,8 @@ impl ComponentRender<RenderProps> for HelpLine {
                 Span::styled("Edit", Style::default().bg(Color::Blue)),
                 Span::raw(" 5"),
                 Span::styled("Copy", Style::default().bg(Color::Blue)),
+                Span::raw(" 7"),
+                Span::styled("MkDir", Style::default().bg(Color::Blue)),
                 Span::raw(" 8"),
                 Span::styled("Delete", Style::default().bg(Color::Blue)),
                 Span::raw(" 10"),

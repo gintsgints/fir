@@ -36,7 +36,7 @@ impl From<&State> for Props {
 
 pub struct AppRouter<'a> {
     props: Props,
-    main_page: MainPage,
+    main_page: MainPage<'a>,
     editor_page: EditorPage<'a>,
     help_line: HelpLine,
 }

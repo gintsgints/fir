@@ -28,7 +28,7 @@ impl From<&State> for Props {
     }
 }
 
-pub struct MainPage {
+pub struct MainPage<'a> {
     /// Action sender
     pub action_tx: UnboundedSender<Action>,
     // Mapped Props from State
@@ -36,10 +36,10 @@ pub struct MainPage {
     // Panels
     l_panel: Panel,
     r_panel: Panel,
-    popup: Popup,
+    popup: Popup<'a>,
 }
 
-impl MainPage {
+impl<'a> MainPage<'a> {
     fn current_item(&mut self) -> &PanelItem {
         match self.props.active_panel {
             PanelPosition::L => self.l_panel.current_item(),
@@ -59,7 +59,7 @@ impl MainPage {
     }
 }
 
-impl Component for MainPage {
+impl<'a> Component for MainPage<'a> {
     fn new(state: &crate::state_management::State, action_tx: UnboundedSender<Action>) -> Self
     where
         Self: Sized,
@@ -125,9 +125,15 @@ impl Component for MainPage {
                     let copy_to = self.opposite_path();
                     let _ = self.action_tx.send(Action::Copy(copy_from, copy_to));
                 }
+                KeyCode::F(7) => {
+                    let _ = self.action_tx.send(Action::MkDirInput);
+                }
                 KeyCode::F(8) => {
                     let remove = self.current_item().file_full_path();
                     let _ = self.action_tx.send(Action::RmYesNo(remove));
+                }
+                KeyCode::F(10) => {
+                    let _ = self.action_tx.send(Action::Exit);
                 }
                 KeyCode::Char('d') => {
                     let remove = self.current_item().file_full_path();
@@ -160,7 +166,7 @@ pub struct RenderProps {
     pub area: Rect,
 }
 
-impl ComponentRender<RenderProps> for MainPage {
+impl<'a> ComponentRender<RenderProps> for MainPage<'a> {
     fn render(&self, frame: &mut ratatui::prelude::Frame, props: RenderProps) {
         let [l_panel_rec, r_panel_rec] = *Layout::default()
             .direction(Direction::Horizontal)

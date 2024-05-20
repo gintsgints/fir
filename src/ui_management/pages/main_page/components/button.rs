@@ -78,7 +78,7 @@ impl ComponentRender<RenderProps> for Button {
         let outer_block = Block::new().padding(Padding {
             left: 1,
             right: 1,
-            top: 1,
+            top: 0,
             bottom: 1,
         });
         let inner = outer_block.inner(props.area);

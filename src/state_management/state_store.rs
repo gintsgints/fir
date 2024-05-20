@@ -1,4 +1,4 @@
-use std::process::{Command, Output};
+use std::{path::MAIN_SEPARATOR, process::{Command, Output}};
 
 use anyhow::Ok;
 use tokio::sync::{
@@ -18,6 +18,7 @@ pub enum PanelPosition {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum PopupType {
+    Input,
     YesNo,
     #[default]
     Error,
@@ -85,6 +86,41 @@ impl<'a> StateStore {
                         state.reload(PanelPosition::L);
                         state.reload(PanelPosition::R);
                     },
+                    Action::MkDirInput => {
+                        state.popup_msg = String::from("Create directory:");
+                        state.popup_type = PopupType::Input;
+                        state.popup_next_action = Some(Action::MkDir)
+                    },
+                    Action::SetInput(value) => {
+                        state.popup_input = value;
+                    },
+                    Action::MkDir => {
+                        state.popup_next_action = None;
+                        let mut full_path = if state.l_panel.active {
+                            state.l_panel.path.display().to_string().clone()
+                        } else {
+                            state.r_panel.path.display().to_string().clone()
+                        };
+                        full_path.push(MAIN_SEPARATOR);
+                        full_path.push_str(&state.popup_input);
+                        #[cfg(target_os = "windows")]
+                        let output = Command::new("md")
+                            .arg(full_path)
+                            .output()
+                            .expect("Filed to create directory");
+                        #[cfg(not(target_os = "windows"))]
+                        let output = 
+                        Command::new("mkdir")
+                            .arg(full_path)
+                            .output()
+                            .expect("Filed to create directory");
+                        if !output.status.success() {
+                            state.popup_msg = self.get_error_msg(&output)?;
+                            state.popup_type = PopupType::Error;
+                        } else {
+                            state.popup_msg = String::from("");
+                        }
+                    },
                     Action::RmYesNo(file) => {
                         let mut msg = String::from("Do you want to remove file? ");
                         msg.push_str(&file);
@@ -98,13 +134,13 @@ impl<'a> StateStore {
                         let output = Command::new("del")
                             .arg(file)
                             .output()
-                            .expect("Filed to copy file");
+                            .expect("Filed to remove file");
                         #[cfg(not(target_os = "windows"))]
                         let output = Command::new("rm")
                             .arg("-rf")
                             .arg(file)
                             .output()
-                            .expect("Filed to copy file");
+                            .expect("Filed to remove file");
                         if !output.status.success() {
                             state.popup_msg = self.get_error_msg(&output)?;
                             state.popup_type = PopupType::Error;

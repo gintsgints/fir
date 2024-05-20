@@ -29,6 +29,7 @@ pub struct State {
     pub popup_msg: String,
     pub popup_type: PopupType,
     pub popup_next_action: Option<Action>,
+    pub popup_input: String,
 }
 
 impl State {
