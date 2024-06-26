@@ -187,11 +187,11 @@ impl ComponentRender<RenderProps> for Panel {
         if self.props.active {
             title_style = title_style.bg(Color::LightCyan).fg(Color::Black);
         }
-        let panel_block = Block::bordered().border_type(BorderType::Double).border_style(Style::default().fg(Color::Cyan))
+        let panel_block = Block::bordered().border_type(BorderType::Double).border_style(Style::default())
             .title_style(title_style)
             .title(title_text)
             .title_alignment(Alignment::Center)
-            .style(Style::new().bg(Color::Blue).fg(Color::Black));
+            .style(Style::new().bg(Color::Black).fg(Color::White));
         let panel_list = List::new(panel_items)
             .block(panel_block)
             .highlight_style(Style::new().bg(Color::Cyan).fg(Color::Black));
